@@ -1,0 +1,344 @@
+---
+title: "SINT OS"
+description: "The first secure, Jarvis-style personal AI operating system — agentic, multimodal, and physically safe."
+sidebarTitle: "SINT OS"
+---
+
+**SINT OS** is what happens when you combine OpenClaw (the agent runtime), SINT Protocol (the governance engine), SINT Avatar (the face), and multimodal AI (the senses) into a single operating system for autonomous agents.
+
+<Info>
+SINT OS is not a separate product — it's the unified stack. Each component already exists and runs independently. SINT OS is the integration layer that makes them work as one system.
+</Info>
+
+---
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                         SINT OS                              │
+│                                                              │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌─────────────┐ │
+│  │  Avatar   │  │ Console  │  │ Outreach │  │  CMO        │ │
+│  │  (Face)   │  │ (Brain)  │  │ (Hands)  │  │ (Content)   │ │
+│  │  3D+Voice │  │ 31 mods  │  │ LinkedIn │  │ 18 skills   │ │
+│  └────┬──────┘  └────┬─────┘  └────┬─────┘  └─────┬───────┘ │
+│       │              │             │               │         │
+│       └──────────────┼─────────────┼───────────────┘         │
+│                      │             │                          │
+│          ┌───────────┴─────────────┴───────────┐             │
+│          │     @sint/os-core (Orchestrator)     │             │
+│          │  Boot → Govern → React → Evidence    │             │
+│          └───────────┬─────────────────────────┘             │
+│                      │                                        │
+│     ┌────────────────┼────────────────────┐                  │
+│     │                │                    │                   │
+│  ┌──┴──────────┐  ┌──┴──────────┐  ┌─────┴──────────┐      │
+│  │  OpenClaw    │  │  SINT       │  │  Evidence      │      │
+│  │  Adapter     │  │  Protocol   │  │  HUD           │      │
+│  │  (T0-T3)    │  │  (Gateway)  │  │  (Ledger View) │      │
+│  └──┬──────────┘  └──┬──────────┘  └────────────────┘      │
+│     │                │                                       │
+│     │   ┌────────────┴─────────────────────┐                │
+│     │   │     SINT Protocol Core            │                │
+│     │   │  • Capability Tokens (Ed25519)    │                │
+│     │   │  • Policy Gateway (32 endpoints)  │                │
+│     │   │  • Evidence Ledger (SHA-256)       │                │
+│     │   │  • 12 Protocol Bridges            │                │
+│     │   └───────────────────────────────────┘                │
+│     │                                                        │
+│  ┌──┴──────────────────────────────────┐                    │
+│  │     OpenClaw Runtime                 │                    │
+│  │  • WebSocket Gateway (port 18789)    │                    │
+│  │  • 20+ Channel Plugins              │                    │
+│  │  • MCP Tool Router                   │                    │
+│  │  • Session Manager                   │                    │
+│  │  • Cron Scheduler                    │                    │
+│  │  • Docker Sandbox                    │                    │
+│  └──────────────────────────────────────┘                    │
+└──────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## The Stack
+
+| Layer | Component | What It Does | Repo |
+|:------|:----------|:-------------|:-----|
+| **Face** | SINT Avatar | 3D WebGL avatar, ElevenLabs TTS, Conversation Compiler, 18 widget types | `sint-ai/sint-avatars` |
+| **Brain** | SINT Console | 31 features, visual workflow builder, agent orchestration, Web3 | `sint-ai/sint-agents` |
+| **Hands** | SINT Outreach | LinkedIn automation, auto-send engine, sequence engine, A/B testing | `sint-ai/sint-outreach` |
+| **Content** | CMO Operator | 18-skill video→content pipeline, multi-channel publish | `sint-ai/sint-cmo-operator` |
+| **Spine** | SINT Protocol | Governance: capability tokens, policy gateway, evidence ledger, 12 bridges | `sint-ai/sint-protocol` |
+| **OS** | OpenClaw | Agent runtime: gateway, channels, MCP, sessions, cron, sandbox | `openclaw/openclaw` |
+
+---
+
+## Core Packages
+
+### @sint/os-core
+
+The main entrypoint. Boots all components, orchestrates governance, connects avatar reactions to policy events.
+
+```typescript
+import { SintOS } from "@sint/os-core";
+
+const os = new SintOS({
+  gatewayUrl: "http://localhost:4100",   // SINT Protocol gateway
+  agentId: "my-agent-pubkey",
+  openclawWsUrl: "ws://127.0.0.1:18789", // OpenClaw gateway
+  avatar: {
+    serverUrl: "http://localhost:3005",   // SINT Avatar
+  },
+  evidenceHud: { enabled: true },
+  crossSystemPolicies: DEFAULT_PHYSICAL_POLICIES,
+});
+
+await os.boot();
+```
+
+**What `boot()` does:**
+1. Connects to SINT Protocol gateway → verifies health
+2. Initializes OpenClaw adapter → maps all tools to T0-T3 tiers
+3. Connects to Avatar server → verifies 3D face is running
+4. Starts Evidence HUD → begins ledger stream
+5. Activates cross-system policy engine
+
+### @sint/openclaw-adapter
+
+The governance choke-point. Every OpenClaw action passes through here before execution.
+
+```typescript
+const adapter = os.getAdapter();
+
+// Govern a tool call
+const result = await adapter.governToolCall({
+  tool: "exec",
+  params: { command: "rm -rf /tmp/data" },
+  elevated: true,
+});
+// result.tier === "T3"
+// result.outcome === "escalate"
+// result.approvalId === "apr-123"
+```
+
+#### Tier Classification
+
+Every OpenClaw tool, MCP server, and node action is classified into a safety tier:
+
+| Tier | Description | OpenClaw Examples | Governance |
+|:-----|:------------|:------------------|:-----------|
+| **T0** | Observe only | `read`, `web_search`, `web_fetch`, `image`, `pdf`, `memory_search`, `session_status`, `sessions_list` | Auto-approved, no gateway call |
+| **T1** | Reversible digital | `write`, `edit` | Gateway validates, auto-approved with valid token |
+| **T2** | Requires governance | `message.send`, `tts`, `image_generate`, `sessions_spawn`, `cron.add`, `exec` (non-elevated) | Gateway validates + may require approval |
+| **T3** | Physical / irreversible | `exec` (elevated), `canvas.eval`, `nodes.camera_snap`, `nodes.invoke`, `nodes.screen_record` | Gateway validates + human approval required |
+
+<Tip>
+T0 calls never hit the network — they're approved locally in microseconds. This means governance adds zero latency to read operations.
+</Tip>
+
+#### Cross-System Policies
+
+The key differentiator from basic sandbox. These policies span multiple subsystems:
+
+| Policy | When Active | Denied Actions | Why |
+|:-------|:-----------|:---------------|:----|
+| `no-fs-while-moving` | `robot.moving` | File writes, edits | Prevents controller corruption during motion |
+| `no-exec-while-moving` | `robot.moving` | Shell execution | Prevents control interference |
+| `no-deploy-while-active` | `cmd_vel` | Deploy, restart | Can't restart while velocity commands are active |
+| `no-network-while-armed` | `drone.armed` | Network, exec | Safety critical — no external access while armed |
+
+```typescript
+// Activate a system state
+adapter.getStateTracker().activate("robot.moving");
+
+// Now file writes are automatically denied
+const result = await adapter.governToolCall({
+  tool: "write",
+  params: { path: "/robot/config.yaml" },
+});
+// result.allowed === false
+// result.reason === "[Cross-System Policy: no-fs-while-moving] ..."
+```
+
+Custom policies are supported:
+```typescript
+const os = new SintOS({
+  // ...
+  crossSystemPolicies: [
+    {
+      name: "no-reboot-during-surgery",
+      whenActive: "patient.connected",
+      denyActions: ["system:reboot*", "deploy:*"],
+      reason: "Cannot disrupt systems during active patient monitoring",
+    },
+  ],
+});
+```
+
+### Avatar Bridge
+
+Connects governance events to visual avatar reactions. When SINT denies an action, the avatar shakes its head and spawns a status widget. When it escalates, the avatar looks surprised and spawns an approval widget.
+
+| Governance Event | Avatar Expression | Animation | Widget |
+|:-----------------|:-----------------|:----------|:-------|
+| T0 approve | `default` | — | — |
+| T1 approve | `default` | `Head-Nod-Yes` | ✅ Status (3s) |
+| T2 deny | `thinking` | `Thoughtful-Head-Shake` | 🔴 Status (8s) |
+| T3 escalate | `surprised` | `Thinking` | ⚠️ Approval action (30s) |
+
+### Evidence HUD
+
+Real-time viewer of the SHA-256 evidence ledger. Displays a rolling window of governance decisions with chain integrity verification.
+
+```typescript
+const hud = os.getEvidenceHUD();
+hud.onEntry((entry) => {
+  console.log(`${entry.tier} ${entry.outcome}: ${entry.resource}`);
+});
+
+// Verify chain integrity
+const { valid, brokenAt } = hud.verifyChainIntegrity();
+```
+
+---
+
+## SINT Avatar — The Face
+
+The avatar is a full 3D experience (React + Three.js + @react-three/fiber) with:
+
+### Conversation Compiler
+
+A neural rewriter (gpt-4.1-nano) that sits between the AI agent and the TTS pipeline. It:
+1. Takes raw agent output (markdown, JSON, technical text)
+2. Rewrites it for spoken delivery (contractions, rounding, natural language)
+3. Infers emotion and animation
+4. Spawns contextual UI widgets
+
+```
+Agent output: "Deployed to Railway. Build 47 passed. 3 of 5 tests green."
+    ↓ Conversation Compiler
+Spoken: "Deploy's live. Build passed, three of five tests green."
+Emotion: smile
+Animation: Head-Nod-Yes
+Widgets: [status: "Deploy" → success, progress: "Tests" → 60%]
+```
+
+### Widget System (18 Types)
+
+The avatar spawns contextual widgets during conversation:
+
+| Widget | Description |
+|:-------|:------------|
+| `status` | Success/error/pending indicator |
+| `code` | Syntax-highlighted code block |
+| `metric` | KPI with trend arrow |
+| `progress` | Progress bar with percentage |
+| `list` | Ordered/unordered list |
+| `chart` | Bar, line, or pie chart |
+| `terminal` | Terminal output display |
+| `link` | Clickable link |
+| `table` | Data table with headers |
+| `diff` | Code diff (additions/deletions) |
+| `action` | Actionable button (approve, run, etc.) |
+| `image` | Image with caption |
+| `github` | Live GitHub repo status (PRs, issues, stars) |
+| `dashboard` | Full dashboard with KPIs (live from Paperclip API) |
+| `goals` | Agent goals/objectives |
+| `tasks` | Task list with status |
+| `agents` | Active agents display |
+| `activity` | Activity timeline |
+
+---
+
+## How It All Fits Together
+
+### Example: "Jarvis, deploy the staging build"
+
+```
+1. Voice input → Qwen3.5-Omni / OpenClaw Voice Wake → text
+2. Text → OpenClaw Gateway → SINT agent session
+3. Agent decides: tool call "exec" { command: "railway up --environment staging" }
+4. @sint/openclaw-adapter classifies → T2 (deploy)
+5. Cross-system check → is robot.moving? No → continue
+6. SINT Policy Gateway → intercept → check capability token scope
+7. Gateway: outcome = "approve" (token has deploy:staging scope)
+8. Evidence ledger: logs SHA-256 entry
+9. OpenClaw executes the command
+10. Result → Conversation Compiler → "Staging deploy is live."
+11. Avatar: smile + Head-Nod-Yes + [status: "Staging" → success] widget
+12. Evidence HUD: new entry appears in real-time feed
+```
+
+### Example: "Jarvis, move the robot 2m forward"
+
+```
+1. Voice → text: "move the robot 2 meters forward"
+2. Agent decides: node action "invoke" { command: "move_forward", distance: 2 }
+3. @sint/openclaw-adapter classifies → T3 (physical)
+4. Cross-system check → all clear
+5. SINT Policy Gateway → intercept → T3 requires human approval
+6. Gateway: outcome = "escalate", approvalId = "apr-456"
+7. Avatar: surprised + Thinking + [action: "Approve 2m forward?"] widget
+8. Human clicks "Approve" on widget
+9. Gateway resolves approval → "approved"
+10. Node action executes: robot moves 2m forward
+11. State tracker: activate("robot.moving") → deactivate when done
+12. Evidence ledger: full chain — request → approval → execution → completion
+```
+
+---
+
+## Quick Start
+
+```bash
+# Clone all repos
+git clone https://github.com/sint-ai/sint-protocol.git
+git clone https://github.com/sint-ai/sint-avatars.git
+
+# Start SINT Protocol gateway
+cd sint-protocol && pnpm install && pnpm dev
+
+# Start SINT Avatar
+cd sint-avatars && pnpm install && pnpm dev
+
+# SINT OS connects them
+import { SintOS } from "@sint/os-core";
+const os = new SintOS({
+  gatewayUrl: "http://localhost:4100",
+  agentId: "your-agent",
+  avatar: { serverUrl: "http://localhost:3005" },
+  evidenceHud: { enabled: true },
+});
+await os.boot();
+```
+
+---
+
+## Packages
+
+| Package | Description | Tests |
+|:--------|:------------|:------|
+| `@sint/os-core` | Main entrypoint, lifecycle, orchestration | 9 |
+| `@sint/openclaw-adapter` | OpenClaw governance middleware, tier classifier, cross-system policies | 42 |
+| `@sint/integration-langchain` | LangChain callback handler + tool wrapper | 14 |
+| `@sint/gate-capability-tokens` | Ed25519 capability tokens | — |
+| `@sint/gate-policy-gateway` | 32-endpoint policy gateway | — |
+| `@sint/gate-evidence-ledger` | SHA-256 hash chain evidence | — |
+| 12 bridges | ROS2, MCP, gRPC, MAVLink, A2A, MQTT, OPC-UA, IoT, OpenRMF, Economy, Swarm, HAL | — |
+| **Total** | 30 packages | **1,400+** |
+
+<CardGroup cols={2}>
+  <Card title="Protocol" icon="shield-halved" href="/gate">
+    SINT Protocol governance engine
+  </Card>
+  <Card title="Console" icon="gauge-high" href="/console">
+    Visual control center
+  </Card>
+  <Card title="Architecture" icon="sitemap" href="/architecture">
+    System architecture and package map
+  </Card>
+  <Card title="Roadmap" icon="map" href="/roadmap">
+    Development roadmap
+  </Card>
+</CardGroup>
