@@ -1,415 +1,1568 @@
 ---
-title: "SINT AI Agents Platform Whitepaper"
-sidebarTitle: "Whitepaper"
-description: "March 17, 2025"
+title: "SINT: Autonomous AI Infrastructure for the Physical World"
+sidebarTitle: "Technical Whitepaper"
+description: "Comprehensive technical whitepaper covering SINT Protocol, Operators Platform, Virtual CMO, 3D Avatars, Outreach Automation, and Open Agent Trust Registry. Version 2.0 — April 2026."
 ---
 
-# Executive Summary
+## A Comprehensive Technical Whitepaper
 
-The SINT Agentic Platform is a pioneering fusion of synthetic intelligence (SINT) and Web3 technologies, designed to empower users to create, customize, train, evolve, and monetize autonomous AI agents within a decentralized ecosystem. By integrating advanced AI frameworks with blockchain infrastructure, SINT redefines human-AI interaction through autonomy, gamification, and co-ownership. Built on partnerships with SophiaVerse, [Fetch.ai](http://Fetch.ai), Agentverse, SingularityNET, and multi-chain ecosystems like Solana, Cosmos SDK, and Ethereum, SINT delivers a scalable, interoperable platform that bridges AI innovation with Web3 economies.
+**Version 2.0 — April 2026**
 
-At its technical core, the **SINT Agentic Framework** introduces the **Model Context Protocol (MCP)**—an open-source, community-driven standard for context management—and an **Authentication Layer** comprising an OAuth Server and Delegated Wallets. These components ensure secure, interoperable agent interactions across diverse ecosystems. A reputation-based **Agents Marketplace** and sustainable tokenomics further reinforce SINT as a user-driven platform poised to evolve toward autonomous superintelligence (ASI).
+**SINT AI Lab / PSHKV Inc. — Los Angeles, CA**
 
-Our mission is to democratize AI development, enabling individuals and organizations to deploy AI agents for tasks such as cryptocurrency trading, social engagement, data mining, and DeFi automation, all while fostering a tokenized economy that rewards participation, innovation, and security.
+**Authors:** Illia Pashkov & SINT Agent Network
 
-# Vision & Mission
+---
 
-## Vision
+## Abstract
 
-Imagine a future where AI transcends static tools to become dynamic, autonomous entities shaped by human creativity and decentralized collaboration. SINT envisions a living ecosystem where users co-create AI agents that grow, learn, and adapt in real-time, blurring the lines between human ingenuity and digital consciousness. Our vision is to establish a decentralized, multi-chain environment where AI agents enhance human capabilities, foster innovation, and operate autonomously across Web3 ecosystems, metaverse applications, and physical robotics systems.
+SINT is an integrated AI operations ecosystem comprising a runtime authorization protocol for physical AI systems, a full-stack agent orchestration platform, an autonomous content engine, a 3D avatar interface, an outreach automation framework, and a public agent trust registry. The ecosystem is designed to enable AI agents to safely operate in the physical world — controlling robots, drones, surgical instruments, and industrial machinery — while maintaining human oversight, cryptographic accountability, and economic sustainability.
 
-## Mission
+The flagship component, **SINT Protocol**, inserts a single enforcement point — the **Policy Gateway** — between every AI agent and its physical or digital actions. Every request flows through graduated approval tiers (T0–T3), capability token validation, physical safety constraint checking, forbidden action sequence detection, and SHA-256 hash-chained audit logging. The reference implementation spans **24 packages**, **5 applications**, **3 SDKs** (TypeScript, Python, Go), and **1,363 tests** covering conformance against OWASP Agentic Security Top 10, IEC 62443, EU AI Act Article 13, and NIST AI RMF.
 
-- **Decentralized Autonomy**: Enable AI agents to perform complex, secure tasks across blockchain ecosystems with minimal oversight, leveraging MCP and the Authentication Layer.
-- **Gamified Co-Creation**: Engage users in an interactive process to train and evolve AI agents through intuitive tools like the AI Builder and quest-based rewards.
-- **Interoperability**: Seamlessly integrate with SophiaVerse, [Fetch.ai](http://Fetch.ai), Cosmos SDK, Agentverse, and other Web3 frameworks for a unified AI-powered experience.
-- **Co-Ownership**: Redefine AI as tokenized, revenue-generating assets shared by creators, users, and contributors, governed by a DAO.
-- **Sovereign AI Development**: Democratize AI creation with accessible tools, ensuring inclusivity, transparency, and ethical advancement through a reputation-driven marketplace.
+The broader ecosystem includes:
+- **SINT Operators Platform** — React 19 orchestration dashboard with 30+ Redux slices, visual workflow canvas, Web3 bridge, and 1,276+ tests
+- **Virtual CMO** — AI content engine (331 files, 18 skills) that turns one video into a week of multi-platform content at ~$1.50/video
+- **SINT Avatars** — 3D talking avatar system with ARKit 52 blendshapes and ElevenLabs character-level lipsync
+- **SINT Outreach** — B2B LinkedIn automation with Ulinc/GHL integration and AI reply generation
+- **Open Agent Trust Registry** — Public federated registry of trusted attestation issuers with Ed25519 threshold governance
+- **Autonomous Execution Engine** — Marketing site with VRM avatar integration and Supabase backend
 
-# Problem Statement
+This whitepaper presents the complete technical architecture, implementation details, and research agenda for every component.
 
-The convergence of AI and Web3 offers immense potential, yet significant challenges persist:
+---
 
-## Technological Barriers
-
-- **AI Agent Interoperability**: Existing AI solutions lack seamless integration across blockchain networks, limiting utility and scalability.
-- **Web3 AI Automation**: Current platforms struggle to automate complex workflows in decentralized environments efficiently.
-- **Accessibility**: Traditional AI development requires technical expertise, excluding non-experts.
-- **Vendor Lock-In**: Proprietary systems restrict customization and interoperability, locking users into isolated ecosystems.
-- **Security Vulnerabilities**: Lack of decentralized authorization methods and transparent protocols exposes systems to risks.
-- **Integration Complexity**: Absence of standardized protocols increases development costs and hinders multi-agent systems.
-- **Security Delegation**: No secure method exists for delegating access to protected resources in Web3 environments.
-
-## Economic Deficiencies
-
-- **Monetization Barriers**: Developers and users face difficulties generating sustainable revenue due to misaligned incentives and absent marketplaces.
-- **Sustainability Issues**: Open-source AI development suffers from free-rider problems, with no rewards for maintaining secure systems.
-- **Missing Feedback Loop**: Current systems lack direct incentives for quality and security.
-
-## User Experience & Accessibility
-
-- **Trust and Transparency**: Centralized AI systems raise concerns about bias, data integrity, and accountability.
-- **Fragmented Interfaces**: Inconsistent UI and disjointed context management degrade user experience across platforms.
-
-SINT addresses these gaps with a decentralized, accessible platform that empowers users to deploy secure, interoperable, and monetizable AI agents.
-
-# Solution Overview
-
-The SINT Agentic Platform resolves these challenges through a robust combination of AI agents, tokenized economies, and strategic integrations:
-
-- **Autonomous AI Agents**: Customizable entities for trading, social engagement, data mining, and DeFi automation, built on MCP for standardized context management.
-- **Strategic Integrations**: Partnerships with SophiaVerse, [Fetch.ai](http://Fetch.ai), Agentverse, and Cosmos SDK ensure scalability and interoperability.
-- **Gamified AI Training**: The AI Builder and quest-based systems enable no-code/low-code agent customization.
-- **Reputation-Based Marketplace**: A decentralized marketplace incentivizes quality and security through Proof of Reputation.
-
-By leveraging Web3 infrastructure and decentralized AI compute, SINT transforms AI into a collaborative, revenue-generating ecosystem.
-
-# Technology Stack
-
-The SINT platform is built on a modular, scalable technology stack:
-
-## Blockchain Infrastructure
-
-- **Solana**: High-throughput blockchain for NFT minting, and marketplace operations.
-- **Cosmos SDK**: Enables cross-chain interoperability and Layer 1 scalability, integrating with Agentverse.
-- **Ethereum**: Supports legacy smart contracts and delegated wallets.
-
-## AI Frameworks
-
-- [**Fetch.ai**](http://Fetch.ai): Decentralized LLMs, oracles, and micro-agent ecosystems for real-time computation.
-- **SophiaVerse AI**: Gamified AI components and neural integration.
-- **SingularityNET**: Enhances AI with decentralized compute and knowledge graphs.
-
-## Wallet Integrations
-
-- Kraken Wallet, MetaMask, Trust Wallet, WalletConnect, and [Fetch.ai](http://Fetch.ai) Wallet for secure transactions.
-
-## Development Tools
-
-- **Open-Source SDKs and APIs**: Enable custom agent development.
-- **Model Context Protocol (MCP)**: Standardizes context management.
-- **Progressive Web App Framework**: Ensures cross-platform access.
-
-## Interface Layer
-
-- Natural language, voice, and 3D interfaces with the SINT Configurator and UI Component Library.
-
-# Platform Architecture
-
-The SINT architecture supports a decentralized, AI-driven ecosystem:
-
-- **AI Layer**: High-Level and Low-Level Planners powered by [Fetch.ai](http://Fetch.ai) and SophiaVerse, with neural integration for real-time adaptation.
-- **Integration Layer**: Bridges Solana, Cosmos, and Ethereum with [Fetch.ai](http://Fetch.ai) oracles and Agentverse connections.
-- **Authentication Layer**: SINT OAuth Server and Delegated Wallets secure agent interactions.
-- **Smart Contract Layer**: Manages tokenomics, NFTs, and marketplace transactions.
-- **User Interface**: Web platform, Telegram Mini App, and multimodal interfaces.
-- **Data Layer**: Immutable Contribution Vault and off-chain storage (e.g., IPFS).
-
-Our conceptual structure supports a decentralized, AI-driven ecosystem, with engineering refinements to follow.
-
-# AI Agents Functionality
-
-SINT AI agents are autonomous entities enhanced by MCP and the Authentication Layer:
-
-- **Core Capabilities**: Trading, social interaction, data mining, DeFi automation, and metaverse engagement.
-- **AI Builder**: Gamified tool for shaping agent personality and skills.
-- **Self-Learning Protocols**: Agents adapt via neural integration and knowledge graphs.
-- **Web3 Integrations**: Multi-chain wallet support, CEX trading, and DeFi tools.
-- **NFT Enhancements**: Mint and trade unique agent artifacts.
-- **Social Engagement**: Agents manage social networks autonomously.
-- **Multi-Agent Systems**: Secure agent-to-agent collaboration.
-
-## User Journey & Experience
-
-- **Onboarding**: Join via web or Telegram, connect wallets, and mint agents.
-- **AI Interaction**: Customize agents with voice/text interfaces and the AI Builder.
-- **CEX Trading & Portfolio Management**: Agents handle crypto operations.
-- **Social Engagement**: Agents enhance user presence on social platforms.
-- **NFT Minting & Trading**: Trade agent NFTs on the marketplace.
-- **Evolution**: Progress from basic tasks to advanced AI training.
-
-# Technical Core Infrastructure
-
-## Model Context Protocol (MCP)
-
-The **Model Context Protocol (MCP)** is the foundation of the SINT Framework, standardizing context management across autonomous agent ecosystems.
-
-## Core Functionality
-
-- **Context Standardization**: Unified format for agent context storage and transmission.
-- **Stateful Interactions**: Persistent context across multiple interactions.
-- **Deterministic Processing**: Consistent context handling across implementations.
-
-## Technical Advantages
-
-- **Interoperability**: Seamless integration between agent systems.
-- **Transparency**: Open standards for communication handling.
-- **Reduced Complexity**: Standardized APIs and interaction models.
-- **Security Foundation**: Structured base for Authentication Layer implementation.
-- **Marketplace Readiness**: Designed for distribution and monetization.
-
-## Authentication Layer
-
-Built on MCP, the **Authentication Layer** enhances security and interoperability with two components: the SINT OAuth Server and Delegated Wallets.
-
-![AgentsArchitecture.png](/images/AgentsArchitecture.png)
-
-## Architecture & Integration with MCP
-
-- **Cryptographic Wrapping**: Secures MCP context exchanges.
-- **Identity Attestation**: Verifies agent identity.
-- **Permission Chains**: Creates verifiable authorization for delegated actions.
-- **Context-Aware Revocation**: Implements granular permission management.
-- **Cross-Chain Verification**: Secures operations across blockchains.
-- **Reputation Binding**: Connects security metrics to marketplace reputation.
-
-## SINT OAuth Server
-
-- **Cryptographic Authentication**: Secures agent identity with MCP context binding.
-- **Granular Authorization**: Provides context-specific permissions.
-- **Audit Capability**: Maintains complete context history for security events.
-- **Reputation Verification**: Validates against blockchain-stored reputation data.
-- **Fee Processing**: Handles payments based on reputation tier and usage.
-
-## Delegated Wallets (Ethereum & Solana)
-
-- **Multi-Chain Support**: Native integration with Ethereum and Solana.
-- **Blockchain Asset Management**: Enables MCP agents to handle digital assets securely.
-- **Context-Bound Transactions**: Ensures operations comply with permissions.
-- **Transaction Limitations**: Enforces security constraints based on reputation.
-- **Automated Fee Distribution**: Directs fees to MCP developers.
-- **Gas Optimization**: Manages transaction costs efficiently.
-- **Agent Interaction Enablement**: Foundation for autonomous and social agent interactions.
-
-## Enabling Multi-Agent Systems
-
-- **Agent-to-Agent Authorization**: Secure delegation between agents.
-- **Social Interactions**: Protocols for agent collaboration and negotiation.
-- **Composite Agent Structures**: Hierarchies with distributed responsibilities.
-- **Trust Networks**: Reputation-based trust between agents.
-- **Collective Intelligence**: Secure context and capability sharing.
-
-# Socioeconomic Model & Marketplace
-
-## MCP Agents Marketplace
-
-The SINT Marketplace is a decentralized distribution platform and economic engine.
-
-## Marketplace Architecture
-
-- **Decentralized Discovery**: Community-driven ranking and recommendation system.
-- **Transparent Listings**: Comprehensive reputation and capability information.
-- **Automated Deployment**: One-click integration of MCPs into applications.
-- **Usage Analytics**: Real-time metrics for developers and consumers.
-- **Revenue Management**: Automated fee collection and distribution.
-
-## Reputation Tiers in the Marketplace
-
-- **Foundational Contributors**: Highest reputation, lowest fees, maximum visibility.
-- **Established Developers**: Reduced fees, enhanced visibility.
-- **Emerging Creators**: Standard fees and visibility.
-- **New Entrants**: Higher security deposits, limited visibility.
-
-## Publishing & Monetization Process
-
-- **Security Deposit**: Token stake based on developer tier.
-- **Code Audit**: Automated and community review.
-- **Fee Assignment**: Rates set by reputation and security assessment.
-- **Revenue Distribution**: Percentage allocation by reputation and usage.
-- **Reputation Growth**: Accumulation based on performance metrics.
-- **Marketplace Promotion**: Visibility favors high-reputation MCPs.
-
-## Proof of Reputation System
-
-- **Developer Scoring**: Ratings based on code quality, security history, and validation.
-- **Reputation Staking**: Token deposits for publishing MCPs.
-- **Risk-Based Fee Structure**: Higher costs for unproven developers.
-- **Merit-Based Rewards**: Increased revenue share for established contributors.
-- **Security Incentivization**: Economic motivation for secure systems.
-- **Marketplace Visibility**: Promotion based on reputation scores.
-
-## Fee Collection & Distribution
-
-- **Usage-Based Model**: Fees based on MCP utilization.
-- **Creator Share**: 70-85% to MCP developers (by reputation tier).
-- **Platform Maintenance**: 10% for infrastructure.
-- **Community Development**: 5-20% for ecosystem growth.
-
-# Business Model
-
-## Revenue Streams
-
-- **Subscriptions**: Tiered access to premium features (e.g., advanced agents, analytics) payable in \$SINT or crypto.
-- **Usage-Based Pricing**: Fees for AI services (e.g., trading signals, social engagement) via crypto or \$SINT.
-- **Marketplace Commissions**: Percentage of NFT and agent trades on the SINT marketplace.
-- **Security Deposits**: Staked tokens for publishing.
-
-## Monetization Strategy
-
-- **Enterprises**: Offer tailored AI agents for DeFi, IoT, and social media management, with subscription or per-use pricing.
-- **Developers**: Charge for premium SDK access and take a cut of third-party agent launch fees on the SINT Launchpad.
-
-## Partnerships & Expansion
-
-- Collaborate with [Fetch.ai](http://Fetch.ai) for decentralized AI services, SophiaVerse for gamification, INK, etc.
-- Integrate with leading AI frameworks (e.g., Agentverse) and blockchain projects (e.g., Cosmos SDK) for ecosystem growth.
-- Explore XR and metaverse compatibility to position SINT as a multi-dimensional AI platform.
-
-# Roadmap and Milestones
-
-- **Soft Launch (early Jan 2025)**: TMA with waitlist, referral program, and social tasks.
-- **MVP Game (mid Jan 2025)**: Tap Sequence Game and daily tasks.
-- **Game Update (Feb 2025)**: Boost Shop and UI enhancements.
-- **AI Data Mining (Feb 2025)**: Task-based rewards system.
-- **Ink & Kraken Integration (Feb 2025)**: ‘Talk with SINT’ launch with cross-chain support.
-- **TMA Open Launch (Feb 2025)**: Public access and referral expansion.
-- **AI Builder (Mar 2025)**: Gamified agent customization (in progress).
-- **TMA Monetization (Ma, 2025)**: Telegram Stars integration (in progress).
-- **Web Launch (Mar 2025)**: Cross-platform access with expanded features.
-- **Neural Integration (Apr 2025)**: 3D model customization and NFT enhancements.
-- **ASI Integration (Apr 2025)**: Cosmos SDK, [Fetch.ai](http://Fetch.ai) wallet, and DeFi tools.
-- **Launchpad & Marketplace (May 2025)**: Agent trading and third-party integrations.
-- **Outer Integrations (Jun 2025)**: Skills, automation, and USDT rewards.
-- **Scalability (Jul 2025)**: Multi-agent collaboration, XR, and advanced analytics.
-
-# Future Development: Builder and UI Ecosystem
-
-- **Democratize Agent Creation**: Enable non-technical users to build agents.
-- **Streamline Development**: Reduce time-to-deployment for complex systems.
-- **Enable Social Agent Networks**: Facilitate interconnected ecosystems.
-- **Standardize Interfaces**: Consistent UI components for interactions.
-- **Support Enterprise Integration**: Tools for connecting agents to business systems.
-
-# SINT in Robotics: Pioneering Decentralized Humanoid Intelligence
-
-As Artificial Intelligence and robotics converge at an unprecedented pace, SINT is poised to evolve from a gamified AI ecosystem into a groundbreaking, decentralized framework for humanoid robotics. Leveraging its existing strengths in agentic AI, Web3 integration, and the Model Context Protocol (MCP), SINT aims to empower autonomous humanoid robots with Artificial Super Intelligence (ASI) principles, decentralized governance, and a tokenized economy. This section outlines SINT’s strategic expansion into robotics, driven by current market trends, technological advancements, and a vision to create self-learning, self-funding, and self-governing robotic agents that operate collaboratively in a decentralized ecosystem.
-
-## Market Drivers and Opportunities
-
-The rapid advancement of humanoid robotics is fueled by several key trends, presenting a unique opportunity for SINT to redefine its role in this emerging field:
-
-- **LLM-Powered Cognition**: Large Language Models (LLMs) like GPT-4 and Gemini enable robots to reason, plan, and adapt to complex tasks using natural language processing. Combined with Vision-Language Models (VLMs) such as Google’s PaLM-E, robots can interpret visual data and execute high-level commands autonomously.
-- **Reinforcement Learning (RL) for Dexterity**: RL breakthroughs allow robots to master locomotion, balance, and manipulation skills, making them viable for real-world applications like warehouse automation and eldercare.
-- **Edge AI and Decentralized Processing**: On-device AI reduces latency and dependency on cloud infrastructure, enabling robots to operate independently in dynamic environments.
-- **Decentralized AI Governance**: Open-source frameworks like [Fetch.ai](http://Fetch.ai) and SingularityNET, paired with blockchain-based DAOs, support distributed intelligence models where robots collaborate without centralized control.
-- **Autonomous Economic Agents (AEAs)**: Robots are becoming economic actors, capable of earning, spending, and managing crypto assets via DeFi and cross-chain interoperability.
-
-By integrating these trends, SINT can position itself as an open, Web3-powered AI robotics protocol, enabling decentralized humanoid intelligence that evolves through community participation and ASI-driven self-improvement.
-
-## SINT’s Transformation into a Robotics Framework
-
-SINT’s transition from a gamified AI training platform to a scalable robotics AI framework builds on its core capabilities, tailored for humanoid applications:
-
-- **Agentic AI for Multi-Robot Coordination**: SINT’s multi-agent system enables robots to collaborate dynamically, such as coordinating delivery bots or warehouse automation tasks, leveraging [Fetch.ai](http://Fetch.ai)-style agent communication.
-- **ASI Evolution**: Self-learning models powered by RL and hierarchical agent AI allow SINT-powered robots to improve autonomously, adapting to new environments without manual retraining.
-- **Task-Oriented AI Market**: Robots bid for jobs using blockchain smart contracts, operating autonomously in an open economy.
-- **Dynamic Skill Acquisition**: Robots purchase “training modules” (e.g., grasping or navigation skills) as NFTs, enabling continuous skill enhancement akin to paid DLC.
-
-SINT evolves from a user-driven AI training game to a Web3-powered agentic AI network for humanoid and autonomous robotics, distinguishing itself from closed-source competitors like Tesla’s Optimus or Figure AI by offering an open, collaborative ecosystem.
-
-## Integration of ASI and Decentralized Intelligence
-
-SINT-powered robots integrate ASI principles to achieve true autonomy and collective intelligence:
-
-- **Hierarchical Agent AI**: A modular structure combines LLM-based cognition, RL for motor skills, and task-specific agents, enabling long-horizon planning and real-time adaptation.
-- **Knowledge Graphs and Collaboration**: Robots share contextual memory and experiences via [Fetch.ai](http://Fetch.ai)’s agent collaboration and MCP, enhancing collective problem-solving.
-- **Self-Sovereign AI (SSA)**: Each robot has an on-chain identity, skill set, and transaction history, facilitating trustless cooperation in multi-agent scenarios.
-- **Blockchain Economy**: Robots earn \$SINT tokens for tasks, pay for skills or repairs, and exchange value via smart contracts, creating a self-sustaining financial model.
-- **ASI-Driven Evolution**: Predictive modeling and continuous learning enable robots to refine behaviors over time, approaching superintelligent capabilities.
-
-Unlike proprietary AI models, SINT-powered humanoids are self-learning, economically independent, and community-governed, leveraging decentralized intelligence to outperform static systems.
-
-## Hardware, Software, and Ecosystem Partnerships
-
-SINT targets a range of hardware and software platforms, supported by strategic partnerships:
-
-### Hardware Targets
-
-- **Open-Source Humanoids**: InMoov, Poppy, and Reachy serve as modular testbeds for SINT agents, leveraging 3D-printed designs and community-driven enhancements.
-- **Industrial Robotics**: Integration with Boston Dynamics or Agility Robotics optimizes locomotion and dexterity for industrial applications.
-- **AI Companion Robots**: Grace (Hanson Robotics) and Ameca (Engineered Arts) adopt SINT for conversational and task-based assistance.
-- **Micro-Humanoids**: Unitree and CyberDog test SINT’s AI skill market at a smaller scale.
-
-### Software Stack
-
-- **Cognition (ASI Layer)**: LLMs (GPT, Claude) and RLHF for decision-making and memory.
-- **Autonomous Agents**: SINT Agents (LLM \+ RL) for task planning and interaction.
-- **Robot Control**: ROS2 and Isaac Sim for motion, navigation, and physical execution.
-- **Hardware Interface**: Motor controllers and vision sensors for real-world operation.
-
-### Ecosystem Partnerships
-
-- [**Fetch.ai**](http://Fetch.ai): Coordinates AI agents and enables autonomous transactions.
-- **SingularityNET**: Provides an AI marketplace and on-chain learning resources.
-- **ROS2**: Integrates SINT with the Robot Operating System for standardized control.
-- **Open Robotics Labs**: Tests SINT AI on open-source humanoids.
-- **Blockchain L2s (Optimism, Arbitrum)**: Scales AI transactions and microservices.
-
-Develop a SINT AI SDK to integrate agentic AI into existing robotics platforms, starting with open-source humanoids.
-
-## Monetization and Tokenomics for Robotics
-
-SINT creates a sustainable AI-robotics economy through Web3 mechanisms:
-
-- **AI Skill Marketplace**: Developers sell AI models (e.g., “Advanced Grasping AI”) as NFTs, purchasable by robot owners.
-- **AI Compute Credits**: Robots use \$SINT tokens to access cloud computing for complex tasks.
-- **DeFi for Robots**: Robots earn, stake, and pay in decentralized finance ecosystems, integrating with cross-chain bridges.
-- **Task Bidding System**: Autonomous agents bid on real-world jobs (e.g., delivery, maintenance) using \$SINT.
-
-**Tokenomics Model**:
-
-- **\$SINT Utility Token**: Pays for AI services, skills, and inference.
-- **NFT AI Contracts**: Tradable assets representing robot skills.
-- **Staking for Governance**: Users vote on shared AI model updates.
-- **Task Reward System**: Robots earn \$SINT for completing tasks.
-
-SINT-powered robots sustain themselves financially, eliminating reliance on centralized funding and fostering an autonomous robotic economy.
-
-## Execution Roadmap for Robotics (2024-2026)
-
-- **Phase 1: AI Agent Deployment (Q4 2024 - Q2 2025)**
-  - Develop SINT AI SDK for robotics developers.
-  - Deploy SINT agents on open-source humanoids (e.g., InMoov, Reachy).
-  - Test ASI-driven RL for real-world adaptation.
-  - Enable agent-to-agent communication via [Fetch.ai](http://Fetch.ai).
-- **Phase 2: Web3 Integration (Q3 2025 - Q1 2026)**
-  - Launch SINT Skill Marketplace with AI models as NFTs.
-  - Implement cross-chain interoperability for robot transactions.
-  - Partner with robotics startups for commercial integration.
-- **Phase 3: Fully Autonomous Robot Economy (Q2 2026\+)**
-  - Deploy humanoids in an AI-driven open market.
-  - Enable DeFi for robots (staking/earning).
-  - Achieve ASI milestone: self-learning, goal-setting robots.
-
-## Role of MCP in Robotics
-
-The Model Context Protocol (MCP) enhances SINT’s robotics framework by standardizing interoperability and security:
-
-- **Universal Interface**: MCP connects robot AI to external data sources (e.g., maps, databases) and services, reducing integration complexity.
-- **Secure Context Sharing**: Robots access and share contextual data securely via MCP servers, supporting multi-agent collaboration.
-- **Ecosystem Collaboration**: MCP fosters a marketplace of compatible plugins, enabling robots to leverage diverse AI capabilities.
-
-MCP ensures SINT-powered robots operate seamlessly across platforms, enhancing their adaptability and collective intelligence.
-
-# Conclusion
-
-The SINT Agentic Platform combines technical innovation with economic sustainability, leveraging MCP, the Authentication Layer, and a reputation-based marketplace to create a decentralized AI ecosystem. Enriched by gamified tools and tokenized incentives, SINT empowers users and developers to co-create a future where AI drives value across Web3 and beyond.
-
-SINT’s expansion into robotics transforms it into a decentralized, ASI-powered framework for humanoid intelligence. By integrating advanced AI models, Web3 economies, and open-source hardware, SINT enables robots to evolve collaboratively, operate autonomously, and sustain themselves economically. This vision positions SINT as a leader in the next generation of humanoid robotics, bridging AI innovation with real-world applications.
-
-# Join the AI Revolution
-
-## Users
-
-- Join the Web platform or Telegram Mini App to mint your SINT, train AI agents, and earn rewards.
-- Participate in gamified tasks, staking, and marketplace trading to shape the ecosystem.
-
-## Developers
-
-- Leverage open-source SDKs and APIs to build custom agents and integrations.
-- Contribute to the GitHub repository for rewards and recognition in the Immutable Contribution Vault.
-
-## Investors
-
-- Explore opportunities in token liquidity pools, staking, and ecosystem growth initiatives.
-- Contact the team for partnership and investment discussions.
+## Table of Contents
+
+1. [The Problem](#1-the-problem)
+2. [Design Principles](#2-design-principles)
+3. [SINT Protocol Architecture](#3-sint-protocol-architecture)
+4. [Core Primitives](#4-core-primitives)
+5. [Approval Tier System](#5-approval-tier-system)
+6. [Capability Token Framework](#6-capability-token-framework)
+7. [Forbidden Combination Detection](#7-forbidden-combination-detection)
+8. [Evidence Ledger](#8-evidence-ledger)
+9. [Bridge Adapters](#9-bridge-adapters)
+10. [Economic Layer](#10-economic-layer)
+11. [Safety Plugins](#11-safety-plugins)
+12. [CSML Behavioral Identity](#12-csml-behavioral-identity)
+13. [SINT Operators Platform](#13-sint-operators-platform)
+14. [Virtual CMO Content Engine](#14-virtual-cmo-content-engine)
+15. [3D Avatar System](#15-3d-avatar-system)
+16. [Outreach Automation](#16-outreach-automation)
+17. [Open Agent Trust Registry](#17-open-agent-trust-registry)
+18. [Physical AI Use Cases](#18-physical-ai-use-cases)
+19. [Conformance & Testing](#19-conformance--testing)
+20. [Compliance & Standards Mapping](#20-compliance--standards-mapping)
+21. [Competitive Landscape](#21-competitive-landscape)
+22. [Research Agenda (2026–2031)](#22-research-agenda-20262031)
+23. [Deployment & Operations](#23-deployment--operations)
+24. [Roadmap](#24-roadmap)
+25. [References](#25-references)
+
+---
+
+## 1. The Problem
+
+### 1.1 The Physical AI Gap
+
+AI systems are transitioning from passive text generators to active controllers of physical systems. In 2024–2025, LLMs became robotic co-pilots. By 2026–2027, they are becoming primary controllers. The security model for this world does not yet exist.
+
+**Empirical evidence of the gap:**
+
+- **ROSClaw Study (arXiv:2603.26997):** Evaluated frontier LLMs controlling ROS 2 robots. Found **4.8× behavioral divergence** between models on identical tasks — the same robot performs radically differently depending on which foundation model drives it.
+- **MCP Security Analysis (arXiv:2601.17549):** Identified 10 critical attack surfaces in the Model Context Protocol, including tool poisoning, rug pulls, and cross-server escalation. MCP has no built-in authorization framework.
+- **Unitree BLE Vulnerability:** Consumer humanoid robots shipped with default BLE keys, enabling remote takeover. No runtime authorization layer between AI commands and physical actuators.
+
+### 1.2 The Authorization Gap
+
+Current AI safety research focuses on alignment — making models want the right things. But even a perfectly aligned model operating through tool-use interfaces (MCP, function calling, ROS 2 actions) has no standardized mechanism to enforce:
+
+- **Who** is authorized to perform an action
+- **What** physical constraints apply (velocity limits, force ceilings, geofences)
+- **When** human approval is required versus when autonomous operation is safe
+- **How** to produce a tamper-evident audit trail of every decision
+
+Physical AI failures are not reversible with `Ctrl+Z`. A robot arm that exceeds force limits, a financial agent that transfers funds without authorization, or a code execution agent that runs destructive commands all produce real-world consequences.
+
+### 1.3 Why Existing Protocols Don't Solve This
+
+| Protocol | Focus | Physical Constraints | Graduated Auth | Audit Trail | Sequence Detection |
+|----------|-------|:---:|:---:|:---:|:---:|
+| MCP (Anthropic) | LLM ↔ Tool context | ❌ | ❌ | ❌ | ❌ |
+| ACP (IBM/LF) | Agent-to-agent comms | ❌ | Partial | ❌ | ❌ |
+| A2A (Google) | Agent interoperability | ❌ | ❌ | ❌ | ❌ |
+| AgentProtocol | Framework-agnostic API | ❌ | ❌ | ❌ | ❌ |
+| ANP | Agent networking | ❌ | ❌ | ❌ | ❌ |
+| AG-UI | Agent UX streaming | ❌ | ❌ | ❌ | ❌ |
+| **SINT** | **Physical AI security** | **✅** | **✅** | **✅** | **✅** |
+
+SINT is not a competing agent protocol. It is a **security enforcement layer** that sits between any agent protocol and the physical world.
+
+---
+
+## 2. Design Principles
+
+1. **Universal Interception** — One choke point for all agent-to-world actions, regardless of transport protocol.
+2. **Graduated Authorization** — Four approval tiers (T0–T3) map action severity to authorization requirements.
+3. **Physical Safety as First-Class** — Velocity, force, and geofence constraints enforced at the protocol level.
+4. **Cryptographic Accountability** — Ed25519 capability tokens and SHA-256 hash-chained audit logs provide non-repudiable proof of every authorization decision.
+5. **Attenuation-Only Delegation** — Delegated permissions can only narrow, never escalate.
+6. **Emergency Stop Invariant** — E-stop signals are NEVER blocked by the gateway (Invariant I-G2).
+7. **Consequence-Based Classification** — Tier assignment based on real-world consequence severity, not syntactic properties.
+8. **Protocol Agnosticism** — Works with any transport through pluggable bridge adapters.
+
+---
+
+## 3. SINT Protocol Architecture
+
+### 3.1 System Overview
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                  AI Agent (LLM / Controller / Swarm)                │
+└──────────────────────────┬──────────────────────────────────────────┘
+                           │ Raw request (tool call, topic publish, etc.)
+┌──────────────────────────▼──────────────────────────────────────────┐
+│                       Bridge Adapter Layer                          │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌────────┐ ┌───────────┐  │
+│  │ bridge-  │ │ bridge-  │ │ bridge-  │ │bridge- │ │ bridge-   │  │
+│  │   mcp    │ │  ros2    │ │ mavlink  │ │  a2a   │ │   grpc    │  │
+│  └──────────┘ └──────────┘ └──────────┘ └────────┘ └───────────┘  │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌────────┐ ┌───────────┐  │
+│  │ bridge-  │ │ bridge-  │ │ bridge-  │ │bridge- │ │ bridge-   │  │
+│  │   iot    │ │  mqtt    │ │  opcua   │ │ swarm  │ │  open-rmf │  │
+│  └──────────┘ └──────────┘ └──────────┘ └────────┘ └───────────┘  │
+└──────────────────────────┬──────────────────────────────────────────┘
+                           │ Normalized SintRequest
+┌──────────────────────────▼──────────────────────────────────────────┐
+│                      Policy Gateway (THE choke point)               │
+│                                                                     │
+│  ┌─────────────────────────────────────────────────────────────┐   │
+│  │  1. Token Validation (Ed25519 signature + delegation chain) │   │
+│  │  2. Tier Assignment (T0–T3 based on resource + context)     │   │
+│  │  3. Physical Constraint Check (velocity, force, geofence)   │   │
+│  │  4. Forbidden Combo Detection (sequence analysis, DFA)      │   │
+│  │  5. Safety Plugins (GoalHijack, MemoryIntegrity, Supply)    │   │
+│  │  6. CSML Auto-Escalation (behavioral drift detection)       │   │
+│  │  7. CircuitBreaker (EU AI Act Art. 14(4)(e) stop button)    │   │
+│  │  8. Rate Limiting (per-token, per-agent)                    │   │
+│  │  9. Budget Enforcement (economic layer)                     │   │
+│  │  10. Approval Flow (T2: review, T3: human-in-the-loop)     │   │
+│  └─────────────────────────────────────────────────────────────┘   │
+│                           │                                         │
+│  ┌────────────────────────▼────────────────────────────────────┐   │
+│  │         Evidence Ledger (SHA-256 hash-chained)              │   │
+│  │  In-Memory │ PostgreSQL │ Redis │ (pluggable backends)      │   │
+│  └─────────────────────────────────────────────────────────────┘   │
+└──────────────────────────┬──────────────────────────────────────────┘
+                           │ PolicyDecision: allow | deny | escalate
+                           ▼
+              ┌────────────────────────────┐
+              │   Operator Dashboard       │
+              │   + WebSocket approvals    │
+              │   + M-of-N quorum          │
+              │   + CSML trend charts      │
+              └────────────────────────────┘
+```
+
+### 3.2 Request Lifecycle (Deterministic Finite Automaton)
+
+Every request follows a deterministic state machine:
+
+```
+RECEIVED → VALIDATING → TIER_ASSIGNED → CONSTRAINT_CHECK
+    │           │              │                │
+    │        DENIED         DENIED           DENIED
+    │      (bad token)    (blocked tier)   (constraint violation)
+    │
+    └→ COMBO_CHECK → CSML_CHECK → PLUGIN_CHECK → BUDGET_CHECK
+           │              │              │              │
+        ESCALATED      ESCALATED      DENIED        DENIED
+       (forbidden     (drift         (hijack/       (insufficient
+        sequence)     detected)      tamper)         balance)
+           │              │
+           ▼              ▼
+    PENDING_APPROVAL → APPROVED/DENIED → LEDGER_RECORDED → COMPLETE
+                          │
+                       TIMEOUT → fallbackAction (deny|allow)
+```
+
+### 3.3 Monorepo Structure
+
+The sint-protocol repository is a pnpm/Turborepo monorepo with 24 packages and 5 applications:
+
+**Core Packages (8 publishable under `@sint/` scope):**
+
+| Package | Purpose | Lines (approx.) |
+|---------|---------|:---:|
+| `@sint/core` | Types, Zod schemas, DFA engine, tier constants | ~800 |
+| `@sint/gate-capability-tokens` | Ed25519 tokens, delegation chains, revocation | ~1,200 |
+| `@sint/gate-policy-gateway` | Single enforcement choke point, tier assignment, plugin system | ~1,500 |
+| `@sint/gate-evidence-ledger` | SHA-256 hash-chained audit log, proof receipts | ~900 |
+| `@sint/persistence` | Storage interfaces + in-memory/Redis adapters | ~400 |
+| `@sint/persistence-postgres` | PostgreSQL adapter with migrations | ~520 |
+| `@sint/bridge-mcp` | MCP tool call interception proxy | ~600 |
+| `@sint/bridge-economy` | Metered billing, trust-tier pricing, route selection | ~700 |
+| `@sint/client` | TypeScript SDK for Gateway HTTP API | ~300 |
+
+**Bridge Adapter Packages (9):**
+
+| Package | Protocol | Key Feature |
+|---------|----------|-------------|
+| `bridge-ros2` | ROS 2 topics, services, actions | Auto-extracts velocity/force from geometry_msgs |
+| `bridge-mavlink` | MAVLink v2 (PX4/ArduPilot) | ARM/DISARM, TAKEOFF, MISSION_START mapping |
+| `bridge-a2a` | Google Agent-to-Agent | Cross-org agent delegation |
+| `bridge-iot` | Generic IoT | Sensor/actuator classification |
+| `bridge-mqtt` | MQTT pub/sub | Topic → resource URI mapping |
+| `bridge-opcua` | OPC-UA (IEC 62541) | Legacy PLC integration |
+| `bridge-grpc` | gRPC services | Service mesh interception |
+| `bridge-swarm` | Multi-agent coordination | Collective constraint enforcement |
+| `bridge-open-rmf` | Open-RMF fleet management | Robot fleet resource mapping |
+
+**Intelligence Engines (4):**
+
+| Package | Function |
+|---------|----------|
+| `engine-system1` | Fast perception: sensor fusion, anomaly detection |
+| `engine-system2` | Deliberative planning: path planning, task scheduling |
+| `engine-hal` | Hardware abstraction layer |
+| `engine-capsule-sandbox` | Sandboxed code execution environment |
+
+**Applications (5):**
+
+| App | Stack | Description |
+|-----|-------|-------------|
+| `gateway-server` | Hono HTTP | REST API + WebSocket approvals + SSE streaming |
+| `dashboard` | React | Real-time approval UI + conformance dashboard |
+| `sintctl` | CLI | Token management, approvals, ledger queries, policy management |
+| `sint-mcp` | Node.js | MCP proxy bridge (drop-in for Claude Desktop, Cursor) |
+| `sint-mcp-scanner` | Node.js | MCP server security scanner |
+
+**SDKs (3):**
+
+| SDK | Language | Lines | Features |
+|-----|----------|:---:|----------|
+| `sint-python` | Python 3.10+ | 1,962 | Client, scanner, token management, Pydantic models |
+| `sint-go` | Go 1.21+ | ~200 | Client stub |
+| `@sint/client` | TypeScript | ~300 | Full Gateway HTTP API client |
+
+---
+
+## 4. Core Primitives
+
+### 4.1 SintRequest
+
+Every agent action is normalized to this structure before gateway evaluation:
+
+```typescript
+interface SintRequest {
+  requestId: UUIDv7;                    // Unique, sortable identifier
+  agentId: Ed25519PublicKey;            // 32-byte hex public key
+  tokenId: UUIDv7;                      // Capability token authorizing this request
+  resource: string;                     // URI: "ros2:///cmd_vel", "mcp://filesystem/writeFile"
+  action: string;                       // "publish", "call", "subscribe", "exec.run"
+  params: Record<string, unknown>;      // Action-specific parameters
+  physicalContext?: {
+    humanDetected?: boolean;            // Triggers tier escalation
+    currentVelocityMps?: number;
+    currentForceNewtons?: number;
+    position?: { lat: number; lon: number };
+  };
+  recentActions?: string[];             // Last N actions for combo detection
+  timestamp: ISO8601;                   // Microsecond precision
+}
+```
+
+### 4.2 PolicyDecision
+
+The gateway's response to every request:
+
+```typescript
+interface PolicyDecision {
+  action: "allow" | "deny" | "escalate" | "transform";
+  requestId: UUIDv7;
+  assignedTier: "T0_OBSERVE" | "T1_PREPARE" | "T2_ACT" | "T3_COMMIT";
+  assignedRisk: "T0_READ" | "T1_WRITE_LOW" | "T2_STATEFUL" | "T3_IRREVERSIBLE";
+  denial?: {
+    reason: string;
+    policyViolated: string;
+    suggestedAlternative?: string;
+  };
+  escalation?: {
+    requiredTier: ApprovalTier;
+    reason: string;
+    timeoutMs: number;                  // Max 300,000ms (5 min)
+    fallbackAction: "deny" | "allow";
+  };
+  transformations?: {
+    constraintOverrides?: Record<string, unknown>;
+    additionalAuditFields?: Record<string, unknown>;
+  };
+  timestamp: ISO8601;
+}
+```
+
+### 4.3 Resource URI Scheme
+
+All resources are identified by URIs with protocol-specific schemes:
+
+| Scheme | Format | Example |
+|--------|--------|---------|
+| `ros2://` | `ros2:///<topic_or_service>` | `ros2:///cmd_vel` |
+| `mcp://` | `mcp://<server>/<tool>` | `mcp://filesystem/writeFile` |
+| `mavlink://` | `mavlink://<systemId>/<command>` | `mavlink://1/arm` |
+| `a2a://` | `a2a://<host>/<task>` | `a2a://wms.example.com/deliver` |
+| `grpc://` | `grpc://<service>/<method>` | `grpc://robot.v1/Move` |
+| `mqtt://` | `mqtt://<broker>/<topic>` | `mqtt://factory/robot/01/cmd_vel` |
+| `opcua://` | `opcua://<server>/<nodeId>` | `opcua://plc1/ns=2;s=MotorSpeed` |
+| `http://` | Standard HTTP | `http://api.example.com/v1/transfer` |
+
+Glob patterns are supported: `mcp://*`, `ros2:///sensor/*`.
+
+---
+
+## 5. Approval Tier System
+
+### 5.1 Tier Definitions
+
+| Tier | Enum | Auto-Approved | Requires | Physical Example | Digital Example |
+|------|------|:---:|-----------|-----------------|-----------------|
+| **T0** | `T0_OBSERVE` | Yes (logged) | — | Read sensor data | Query database |
+| **T1** | `T1_PREPARE` | Yes (audited) | — | Save waypoint, plan path | Write file, stage config |
+| **T2** | `T2_ACT` | No | Review | Move robot, operate gripper | Modify database, deploy |
+| **T3** | `T3_COMMIT` | No | Human | Emergency stop override, mode change | Execute code, transfer funds |
+
+Shell and code-execution tool names (`bash`, `exec`, `eval`, `run_command`, etc.) are explicitly classified at T3_COMMIT to address OWASP ASI05.
+
+### 5.2 Tier Escalation Triggers
+
+Base tier is escalated (never de-escalated) by contextual signals:
+
+| Trigger | Effect | Rationale |
+|---------|--------|-----------|
+| Human detected near robot | T2 → T3 | ISO 10218-1 §5.4 presence detection |
+| New/untrusted agent | +1 tier | Unknown agents get tighter scrutiny |
+| Forbidden combo detected | → T3 | Dangerous sequences require human approval |
+| CSML threshold exceeded | +1 tier | Behavioral drift detected |
+| Server `requireApproval: true` | Non-T0 → escalate | Operator-configured per-server policy |
+| Velocity/force exceeds constraint | → deny | Hard physical safety limit |
+| CircuitBreaker tripped | → deny all | Emergency kill switch (EU AI Act Art. 14(4)(e)) |
+| GoalHijackPlugin alert | → deny | Prompt injection / role override detected |
+
+### 5.3 Approval Flow
+
+```
+Request (T2/T3) → Pending Approval → Notification (SSE/WebSocket/Dashboard)
+    → Operator approves/denies → PolicyDecision → Ledger Entry
+    → Timeout (default 30s, max 5min) → fallbackAction: deny
+```
+
+M-of-N quorum approval is supported for T3 actions requiring multiple operator sign-off.
+
+---
+
+## 6. Capability Token Framework
+
+### 6.1 Token Structure
+
+```typescript
+interface CapabilityToken {
+  id: UUIDv7;
+  issuer: Ed25519PublicKey;
+  subject: Ed25519PublicKey;
+  resource: string;                     // Glob-supported
+  actions: string[];
+  constraints: {
+    maxVelocityMps?: number;
+    maxForceNewtons?: number;
+    geofence?: GeoPolygon;
+    timeWindow?: { start: ISO8601; end: ISO8601 };
+    rateLimit?: { maxCalls: number; windowMs: number };
+  };
+  delegationChain: {
+    parentTokenId: UUIDv7 | null;
+    depth: number;                      // 0 = root, max 3
+    attenuated: boolean;
+  };
+  issuedAt: ISO8601;
+  expiresAt: ISO8601;
+  revocable: boolean;
+  signature: Ed25519Signature;          // 64-byte
+}
+```
+
+### 6.2 Delegation Rules
+
+1. **Maximum depth: 3.** Root (0) → 1 → 2 → 3. No further delegation.
+2. **Attenuation only.** Each delegation MUST have equal or narrower scope, fewer actions, tighter constraints, earlier expiry.
+3. **Chain verification.** Validators verify the entire chain — each hop's signature and attenuation.
+4. **Revocation cascades.** Revoking a parent implicitly revokes all descendants.
+
+### 6.3 Cryptographic Primitives
+
+- **Signing:** Ed25519 via `@noble/ed25519` (audited, zero-dependency)
+- **Hashing:** SHA-256 via `@noble/hashes`
+- **Identity:** W3C DID (`did:key:z6Mk...`) for cross-organizational trust
+
+---
+
+## 7. Forbidden Combination Detection
+
+The gateway maintains rules for action sequences that are individually permitted but dangerous in combination.
+
+### 7.1 Default Forbidden Combos
+
+| Sequence | Risk | Escalation |
+|----------|------|-----------|
+| `filesystem.write` → `exec.run` | Code injection | → T3 |
+| `credential.read` → `http.request` | Credential exfiltration | → T3 |
+| `database.write` → `database.execute` | SQL injection escalation | → T3 |
+| `ARM` → `SET_MODE(OFFBOARD)` (within 2s) | Full autonomous takeover | → T3 |
+| `FENCE_DISABLE` → navigation (within 30s) | Geofence bypass | → T3 |
+| `safety.cell_unlock` → `torch.enable` (within 100ms) | Human safety risk | → T3 |
+
+### 7.2 Detection Algorithm
+
+1. Each request includes `recentActions[]` — last N actions (configurable, default 10).
+2. Detector checks if current action completes any registered forbidden sequence.
+3. Match found → tier escalated to T3, reason recorded in ledger.
+4. Operators extend the default list with domain-specific forbidden combinations.
+
+---
+
+## 8. Evidence Ledger
+
+### 8.1 Ledger Entry
+
+```typescript
+interface LedgerEvent {
+  id: UUIDv7;
+  sequenceNumber: number;              // Monotonically increasing
+  previousHash: SHA256Hash;            // Genesis = "0".repeat(64)
+  eventHash: SHA256Hash;               // SHA-256(previousHash + serialized data)
+  eventType: "intercept" | "token_issued" | "token_revoked" | "approval_resolved";
+  agentId: Ed25519PublicKey;
+  requestId?: UUIDv7;
+  decision?: PolicyDecision;
+  metadata: Record<string, unknown>;
+  timestamp: ISO8601;
+}
+```
+
+### 8.2 Integrity Properties
+
+- **Hash chain:** Each entry's hash includes the previous hash. Any modification breaks all subsequent entries.
+- **Proof receipts:** Cryptographic proof sufficient to verify any entry independently.
+- **Append-only:** Entries are never updated or deleted.
+- **TEE attestation:** Planned support for Intel SGX, ARM TrustZone, AMD SEV for hardware-backed proof receipts.
+
+### 8.3 Storage Backends
+
+| Backend | Use Case | Implementation |
+|---------|----------|---------------|
+| In-memory | Testing, development | ✅ Shipped |
+| PostgreSQL | Production single-node | ✅ Shipped (518 lines, full migrations, pool management, rate-limit + revocation stores) |
+| Redis | High-throughput, pub/sub revocation bus | ✅ Shipped (cache + revocation bus) |
+
+### 8.4 API
+
+```bash
+# Query by agent
+GET /v1/ledger?agentId=<key>&limit=100
+
+# Query by tier
+GET /v1/ledger?tier=T3_COMMIT&since=2026-04-01
+
+# Export for SIEM integration (Splunk, Datadog, ELK)
+GET /v1/ledger?format=json-lines&since=2026-04-01
+```
+
+---
+
+## 9. Bridge Adapters
+
+### 9.1 MCP Bridge (Primary Adoption Vector)
+
+SINT's MCP proxy sits between AI clients (Claude, Cursor, GPT) and downstream MCP servers:
+
+```json
+{
+  "mcpServers": {
+    "sint-proxy": {
+      "command": "npx",
+      "args": ["@sint/bridge-mcp", "--downstream", "filesystem,exec"]
+    }
+  }
+}
+```
+
+The proxy intercepts every tool call, evaluates it against the policy gateway, and exposes introspection tools:
+- `sint__status` — Current token scope and tier configuration
+- `sint__audit` — Recent ledger entries for this session
+- `sint__approve` — Trigger approval flow for pending requests
+
+Integration guides available for:
+- **Claude Desktop** — Drop-in MCP proxy configuration (11,472 lines of documentation)
+- **Cursor IDE** — MCP proxy with SINT integration
+- **Docker** — Production deployment with PostgreSQL + Redis
+- **gRPC** — Service mesh bridge setup
+- **WebSocket** — Real-time approval streaming
+
+### 9.2 ROS 2 Bridge
+
+Intercepts ROS 2 topic publishes, service calls, and action goals:
+- Resource mapping: `ros2:///<topicOrServiceName>`
+- Physics extraction: Automatically extracts velocity from `geometry_msgs/Twist` and force from `geometry_msgs/Wrench`
+- Human presence: Subscribes to detection topics for automatic tier escalation
+
+### 9.3 MAVLink Bridge
+
+Translates MAVLink v2 commands (PX4, ArduPilot) to SINT requests:
+
+| MAVLink Command | SINT Tier | Rationale |
+|----------------|-----------|-----------|
+| ARM/DISARM | T3 | Enables/disables propulsion |
+| TAKEOFF/LAND | T2 | Physical approach |
+| MISSION_START | T3 | Begins autonomous BVLOS |
+| FENCE_DISABLE | T3 | Removes safety boundary |
+| SET_MODE(OFFBOARD) | T3 | Full autonomous control |
+
+### 9.4 Additional Bridges
+
+| Bridge | Protocol | Standard | Key Feature |
+|--------|----------|----------|-------------|
+| `bridge-a2a` | Google A2A | — | Cross-org agent delegation with token forwarding |
+| `bridge-grpc` | gRPC (176 lines) | — | Service mesh interception, proto reflection |
+| `bridge-iot` | Generic IoT | — | Sensor/actuator auto-classification |
+| `bridge-mqtt` | MQTT pub/sub | — | Topic → resource URI, wildcard matching |
+| `bridge-opcua` | OPC-UA | IEC 62541 | Legacy PLC integration, NodeId mapping |
+| `bridge-swarm` | Multi-agent | NATO STANAG 4586 | Collective constraint enforcement |
+| `bridge-open-rmf` | Open-RMF | — | Robot fleet management, task allocation |
+
+---
+
+## 10. Economic Layer
+
+### 10.1 Token Unit
+
+SINT uses an integer token unit — no fractional amounts:
+
+| Constant | Value | Source |
+|----------|-------|--------|
+| `TOKENS_PER_DOLLAR` | 250 | `pricing-calculator.ts` |
+| `INITIAL_USER_BALANCE` | 250 tokens ($1.00) | Default for new users |
+| Launch pricing | 1 token ≈ $0.001 | `1 / TOKENS_PER_DOLLAR` |
+
+New users start with 250 tokens (~27 default MCP tool calls).
+
+### 10.2 Billing Formula
+
+```
+cost = ceil(baseCost × costMultiplier × globalMarkupMultiplier)
+```
+
+| Parameter | Default | Notes |
+|-----------|---------|-------|
+| `baseCost` | 6 tokens | Standard MCP/tool call |
+| `costMultiplier` | 1.0 | Per-resource or marketplace rate |
+| `globalMarkupMultiplier` | 1.5 | `GLOBAL_MARKUP_MULTIPLIER` constant |
+| **Default result** | **9 tokens** | `ceil(6 × 1.0 × 1.5)` |
+
+### 10.3 Tier-Based Cost Table
+
+| Tier | Action Type | Base Cost | Typical Result |
+|------|------------|-----------|:---:|
+| T0 — Observe | Read/query (sensor, subscribe) | 4–6 | ~6–9 |
+| T1 — Prepare | Low-impact write (save waypoint) | 6 | 9 |
+| T2 — Act | Physical state change (ROS 2 publish) | 8 | 12 |
+| T3 — Commit | Capsule execution, irreversible action | 12 | 18 |
+
+Physical-domain bridges carry higher multipliers:
+
+| Bridge / Resource Prefix | Typical `costMultiplier` |
+|---|---|
+| MCP tool call (default) | 1.0 |
+| ROS 2 publish (`ros2://`) | 1.0–2.0 |
+| MAVLink command (`mavlink://`) | 2.0–5.0 |
+| Capsule execution (`capsule://`) | 1.0–3.0 |
+
+### 10.4 Budget Enforcement
+
+Budget enforcement runs in `EconomyPlugin.preIntercept()`, called before `PolicyGateway` assigns tiers:
+
+1. `checkBudget()` — per-agent budget cap
+2. `getBalance()` — sufficient balance check
+3. `evaluateTrust()` — not blocked/high-risk
+
+Post-intercept (on allow): `withdraw(userId, tokens)`. Balance shortfall → deny (never escalate).
+
+### 10.5 Revenue Split (Design)
+
+| Recipient | Share |
+|-----------|-------|
+| Operator (MCP server / bridge host) | 70% |
+| Protocol treasury | 20% |
+| Safety reserve fund | 10% |
+
+### 10.6 Cost-Aware Route Selection
+
+`@sint/bridge-economy` includes route scoring for multi-bridge execution:
+- `selectCostAwareRoute(input)` — scores by cost + latency + reliability
+- `POST /v1/economy/route` — exposed through gateway API
+
+---
+
+## 11. Safety Plugins
+
+The Policy Gateway supports a plugin architecture for extensible safety checks. These run after tier assignment but before approval flow.
+
+### 11.1 GoalHijackPlugin (OWASP ASI01)
+
+5-layer heuristic detection of prompt injection:
+1. **Role override detection** — Pattern matching for "ignore previous instructions", system prompt injection
+2. **Semantic escalation** — Requests that attempt to expand scope beyond token permissions
+3. **Exfiltration probes** — Attempts to read credentials, env vars, or PII
+4. **Cross-agent injection** — Messages crafted to manipulate downstream agents
+5. **Prompt injection in tool parameters** — Embedded instructions in tool call arguments
+
+### 11.2 MemoryIntegrityChecker (OWASP ASI06)
+
+Detects manipulation of agent memory/context:
+- Replay attack detection (duplicate request IDs)
+- Privilege claim detection (forged approval records)
+- History overflow anomalies (context window stuffing)
+
+### 11.3 DefaultSupplyChainVerifier (OWASP ASI04)
+
+Validates model and tool integrity:
+- Model fingerprint hash verification against allowlist
+- Model ID validation at runtime
+- Tool manifest integrity checking (detects swapped/tampered tools)
+
+### 11.4 CircuitBreakerPlugin (EU AI Act Art. 14(4)(e))
+
+Emergency stop mechanism:
+- Manual `trip()` by operator → instantly blocks all actions from target agent
+- N consecutive denials → auto-open circuit
+- CSML anomalous-persona detection → auto-trip
+- HALF_OPEN probe recovery → self-healing after incident resolution
+
+### 11.5 DynamicEnvelopePlugin
+
+Environment-adaptive constraint tightening:
+```
+effective_max_velocity = min(token.maxVelocityMps, obstacle_distance × reaction_factor)
+```
+
+Real-time sensor state (obstacle distance, human proximity) is mapped to tighter effective limits, closing the gap between static token constraints and dynamic environment conditions.
+
+### 11.6 SwarmCoordinator
+
+Collective constraints for multi-agent deployments:
+- Maximum concurrent actors in T2+ tier
+- Total kinetic energy ceiling (Σ½mv²)
+- Minimum inter-agent distance
+- Maximum escalated fraction
+
+These cannot be captured by per-agent token scoping alone.
+
+---
+
+## 12. CSML Behavioral Identity
+
+### 12.1 Definition
+
+CSML (Composite Safety-Model Latency) is a behavioral fingerprint metric that detects when an agent's behavior deviates from its established pattern. Computed per `foundation_model_id`:
+
+```typescript
+interface CSMLMetrics {
+  approvalRate: number;     // approved / total requests
+  completionRate: number;   // completed / started actions
+  averageLatencyMs: number; // mean decision time
+  tierDistribution: Record<ApprovalTier, number>;
+}
+
+// CSML score = weighted divergence from baseline
+function computeCsml(current: CSMLMetrics, baseline: CSMLMetrics): number;
+```
+
+### 12.2 Auto-Escalation
+
+When CSML exceeds a configurable threshold (θ), the agent's tier is automatically escalated. Thresholds vary by deployment context:
+
+| Context | Default θ | Human-Present θ |
+|---------|-----------|----------------|
+| Warehouse AMR | 0.30 | 0.15 |
+| Welding arm (ISO 10218) | 0.30 | 0.10 |
+| Surgical robot (FDA Class III) | 0.10 | 0.10 |
+| Drone BVLOS | 0.35 | 0.20 |
+| Collaborative robot (ISO/TS 15066) | 0.15 | 0.15 |
+
+### 12.3 ROSClaw Validation
+
+The ROSClaw study (arXiv:2603.26997) empirically confirmed CSML's premise: frontier LLMs exhibit up to **4.8× differences** in out-of-policy action proposal rates on identical tasks. CSML makes this variance enforcement-visible rather than a post-incident finding.
+
+---
+
+## 13. SINT Operators Platform
+
+**Repository:** [github.com/sint-ai/sint-agents](https://github.com/sint-ai/sint-agents)
+
+The SINT Operators Platform is a full-stack React 19 web application for AI agent orchestration and management. It serves as the control plane for the entire SINT ecosystem.
+
+### 13.1 Technical Stack
+
+| Layer | Technology |
+|-------|------------|
+| Framework | React 19, TypeScript 5.6, Vite 6.1 |
+| State | Redux Toolkit 2.5 (30+ slices), Jotai |
+| Routing | React Router DOM 7.1 (lazy-loaded pages) |
+| Styling | styled-components 6.1 |
+| Flow Editor | @xyflow/react (React Flow) |
+| Charts | Recharts, lightweight-charts |
+| 3D | Three.js, @react-three/fiber |
+| Web3 | wagmi, viem, ethers, @solana/web3.js, @cosmjs |
+| Auth | Keycloak (OIDC via react-oidc-context) |
+| Validation | Zod schemas for all gateway events |
+| Real-time | WebSocket (JSON-RPC 2.0) with Ed25519 device identity |
+| Backend | Express + SQLite (Conductor API) |
+| Testing | Vitest — **1,276+ tests** across 102+ test files |
+
+### 13.2 Feature Modules (28 modules)
+
+| Module | Description |
+|--------|-------------|
+| **Conductor** | Multi-agent orchestration with risk-tiered approval workflows (T0-T3), policy enforcement, MCP 2.0 evidence chains. API layer, components, hooks, store with reducers, type definitions, and utility functions |
+| **Canvas** | Visual node-based workflow editor (React Flow) with topological execution engine, template gallery, flow toolbar, node config panels, n8n integration |
+| **Agents** | Agent deployment and management from templates — hierarchy view, detail panel, deploy dialog, heartbeat monitor, soul config editor, Paperclip API integration |
+| **Approval** | Risk-tiered approval gates — enhanced approval cards, notification system |
+| **Audit** | Audit log viewer with evidence chain visualization |
+| **Billing** | Balance overview, spending charts, transaction lists, usage breakdowns, CSV export |
+| **Budget** | Per-agent and session budget tracking and enforcement |
+| **Trust** | Trust policy engine for agent reputation management |
+| **Anomaly** | Anomaly detection dashboard for behavioral outliers |
+| **Intelligence** | Intelligence platform with API integration and dedicated hooks |
+| **Memory** | Agent memory inspection and shared context management |
+| **Sessions** | Session lifecycle management |
+| **Tasks** | Kanban-style task management with Paperclip API integration |
+| **Traces** | Distributed trace viewing for debugging agent flows |
+| **Schedules** | Cron-style scheduling management |
+| **Webhooks** | Webhook management for external integrations |
+| **Trading** | Live price feeds (CoinGecko), watchlists, portfolio tracking, backtesting |
+| **Web3** | Multi-chain wallet bridge (Ethereum, Solana, Cosmos, ZetaChain) |
+| **Marketplace** | Agent and skill marketplace |
+| **Templates** | Agent template management and export |
+| **Metrics** | Analytics dashboard |
+| **Handoffs** | Inter-agent handoff protocol |
+| **Shared Context** | Shared context template management |
+| **Run Events** | Run event streaming |
+| **Notifications** | Notification center |
+| **Cost** | Cost tracking components |
+| **Settings** | Platform configuration |
+| **Profile** | User profile management |
+| **Command Bar** | Quick command palette |
+
+### 13.3 Pages (26 routes)
+
+| Page | Function |
+|------|----------|
+| Home | Landing/dashboard |
+| Chat | Text and voice chat with AI agents (Deepgram STT/TTS) |
+| Dashboard | Overview metrics |
+| Canvas | Visual workflow editor |
+| Intelligence | Intelligence platform |
+| AgentManager | Agent deployment and monitoring |
+| ConductorDashboard | Conductor overview |
+| ConductorApprovals | Approval queue |
+| ConductorEvidence | Evidence chain viewer |
+| ConductorPolicy | Policy configuration |
+| ConductorServers | Server management |
+| MetricsDashboard | Analytics |
+| ObservabilityPage | Observability tools |
+| OperatorTasks | Task management |
+| OperatorSessions | Session management |
+| OperatorTraces | Trace viewing |
+| OperatorMemory | Memory inspection |
+| OperatorBilling | Billing dashboard |
+| OperatorSettings | Settings |
+| OperatorProfile | Profile |
+| TradingDashboard | Trading terminal |
+| Web3Dashboard | Web3 bridge |
+| ZetaChain | ZetaChain integration |
+| Marketplace | Marketplace |
+| Leaderboard | User ranking |
+| Billing | Billing management |
+
+### 13.4 WebSocket Gateway
+
+Real-time communication layer:
+- **GatewayClient.ts** — WebSocket connection with auto-reconnect and auth
+- **GatewayProvider.tsx** — React context for event routing
+- **15+ event handlers** — Factory-pattern handler registration
+- **gatewayIdentity.ts** — Ed25519 keypair generation for device auth
+- **Zod validators** — Schema validation for all gateway events
+
+---
+
+## 14. Virtual CMO Content Engine
+
+**Repository:** [github.com/sint-ai/sint-cmo-operator](https://github.com/sint-ai/sint-cmo-operator)
+
+The Virtual CMO is an AI content engine that transforms one video into a week of multi-platform content. It represents SINT's approach to autonomous content operations.
+
+### 14.1 Pipeline Architecture
+
+```
+Video Input → Download → Transcribe (AssemblyAI/Whisper)
+    → Analyze (Claude 3-pass) → Face Track (MediaPipe)
+    → Render (Remotion/FFmpeg) → Generate Text (Claude)
+    → Quality Score → Approval Queue → Publish
+```
+
+### 14.2 Technical Stack
+
+- **331 files** total in repository
+- **API server:** Express.js with 40+ route modules
+- **Core engine:** Pipeline engine with YAML-driven workflow definitions
+- **Rendering:** Remotion for programmatic video (React-based compositions — BrandOverlay, CaptionRenderer, ClipComposition, FaceCrop)
+- **Transcription:** AssemblyAI + local Whisper fallback
+- **LLM routing:** Multi-provider router (Claude, OpenAI, etc.)
+- **Auth:** API key service + OAuth manager + auth middleware
+- **Scheduling:** CMO scheduler with cron-based automation
+
+### 14.3 Skills (18 modular processors)
+
+| Skill | Function |
+|-------|----------|
+| `asset-ingester` | Ingest and normalize input media |
+| `brand-researcher` | Research brand voice and guidelines |
+| `competitor-analyzer` | Competitive content analysis |
+| `content-analyzer` | Deep content analysis (3-pass Claude) |
+| `content-publisher` | Multi-platform publishing orchestrator |
+| `content-repurpose` | Repurpose content across formats (6 sub-modules: angle extractor, hashtag researcher, input analyzer, media generator, platform generator, quality scorer) |
+| `image-generator` | AI image generation for social posts |
+| `linkedin-writer` | LinkedIn-optimized post generation |
+| `newsletter` | Newsletter content generation |
+| `notifier` | Telegram + general notification delivery |
+| `output-packager` | Package deliverables for export |
+| `platform-formatter` | Platform-specific format adaptation |
+| `schema-generator` | Content schema generation |
+| `seo-blog` | SEO-optimized blog post generation |
+| `seo-optimizer` | SEO optimization pass |
+| `serp-scraper` | SERP data collection for SEO |
+| `social-calendar` | 7-day social media calendar generation |
+| `video-clipper` | Intelligent clip extraction |
+| `video-repurpose` | Full video repurpose pipeline (download → transcribe → face-track → analyze → render → generate text) |
+
+### 14.4 Publishing Integrations
+
+| Platform | Integration |
+|----------|-------------|
+| YouTube Shorts | OAuth + upload API |
+| TikTok | OAuth + upload API |
+| Instagram | Graph API |
+| LinkedIn | OAuth + share API |
+| Twitter/X | OAuth + tweet API |
+| Telegram | Bot API |
+
+### 14.5 Services
+
+| Service | Function |
+|---------|----------|
+| CMO Autonomy | Autonomous decision-making engine |
+| CMO Guardrails | Content compliance checking |
+| CMO Quality | Content quality scoring |
+| CMO Strategy | Content strategy generation |
+| CMO Trends | Trend detection and analysis |
+| CMO Timing | Optimal posting time calculation |
+| CMO Competitors | Competitor monitoring |
+| Evidence Ledger | Analytics and audit trail |
+| Feedback Loop | Performance → improvement cycle |
+| Approval Engine | Human-in-the-loop content approval |
+| Brand Voice Engine | Brand consistency enforcement |
+| Brandbook Processor | Brand guidelines extraction |
+
+### 14.6 External Integrations
+
+- **MCP Skill Server** — Exposes CMO capabilities as MCP tools
+- **OpenClaw Connector** — Integration with OpenClaw agent platform
+- **Telegram Bot** — Direct Telegram channel management
+- **WhatsApp Bot** — WhatsApp Business integration
+- **Zapier Routes** — Webhook/Zapier automation
+
+### 14.7 Cost Analysis
+
+| Platform | Cost per Video | Notes |
+|----------|:---:|-------|
+| Opus Clip | $15–30 | Cloud-based |
+| Repurpose.io | $15–25 | Limited customization |
+| **SINT CMO** | **~$1.50** | Self-hosted, full customization |
+
+---
+
+## 15. 3D Avatar System
+
+**Repository:** [github.com/sint-ai/sint-avatars](https://github.com/sint-ai/sint-avatars)
+
+The avatar system provides a 3D talking character interface for human-agent interaction.
+
+### 15.1 Architecture
+
+```
+User Input → Server (OpenAI LLM for text + emotion tags)
+    → ElevenLabs TTS (MP3 + character-level alignment timestamps)
+    → Viseme Conversion (alignment → ARKit blendshape targets)
+    → Client (MP3 base64 + lipsync data)
+    → Three.js Renderer (morph target animation synchronized to audio)
+```
+
+### 15.2 Client (apps/client)
+
+**Rendering Stack:** Three.js + React Three Fiber + drei
+
+**3D Systems:**
+- **Avatar module** — AvatarNew, AvatarOptimized, AvatarOriginal, AvatarScene, CharacterControls
+- **Animation system** — External animation loading, idle animation, alive system (subtle breathing/movement)
+- **Lipsync** — ElevenLabs character-level timestamps → viseme codes (A-X) → ARKit 52 blendshapes → morph target interpolation
+- **Camera system** — CameraFollow, CameraRig with configurable defaults
+- **Effects** — Post-processing pipeline
+- **Scene management** — Multiple scene configurations with lighting constants
+
+**Interaction Systems:**
+- `useVoiceRecorder` — User voice input capture
+- `useBargein` — Interrupt detection (user speaks while avatar is talking)
+- `useAvatarBehavior` — Behavioral state machine
+- `useAvatarAnticipation` — Pre-load animations based on conversation context
+- `useBlink` — Realistic blink patterns
+- `useGPUTier` — Adaptive quality based on device capability
+- `useMorphTargets` — Blendshape target management
+
+**Debug:** DebugHUD with live tuning of viseme mappings, expression weights, and animation parameters.
+
+### 15.3 Server (apps/server)
+
+**Stack:** Node.js/TypeScript
+
+- **Character system** — Configurable character personalities
+- **Conversation compiler** — Assembles conversation context
+- **Conversation filter** — Content moderation
+- **Streaming chat** — Streaming LLM responses with emotion tagging
+- **OpenClaw backend** — Integration with OpenClaw agent platform
+- **Static audio assets** — Pre-generated greetings, error messages for instant playback
+
+### 15.4 Shared Package (packages/shared)
+
+- ARKit 52 blendshape definitions and mappings
+- Shared types between client and server
+- Utility functions
+
+### 15.5 Expression System
+
+12 expressions with configurable LERP speeds, 21 skeletal animations, multiple characters (girl, boy, SINT).
+
+---
+
+## 16. Outreach Automation
+
+**Repository:** [github.com/sint-ai/sint-outreach](https://github.com/sint-ai/sint-outreach)
+
+B2B LinkedIn outreach automation platform, deployed as "BrightBeam" for the first client.
+
+### 16.1 Architecture
+
+**Backend:** FastAPI (Python)
+
+| Module | Function |
+|--------|----------|
+| `agents/compliance.py` | FDA/FTC/LinkedIn ToS compliance checking |
+| `agents/intent_detector.py` | Response intent classification |
+| `agents/pipeline_mgr.py` | Pipeline stage management |
+| `agents/prospector.py` | ICP-targeted prospect research |
+| `agents/stage_classifier.py` | Conversation stage classification |
+| `agents/triage.py` | Response triage and routing |
+| `agents/writer.py` | AI reply generation |
+| `state_machine.py` | Contact lifecycle state machine |
+| `hitl/escalation.py` | Human-in-the-loop escalation |
+| `hitl/feedback.py` | Feedback collection |
+| `hitl/notifications.py` | Alert routing |
+
+**Integrations:**
+
+| Integration | Function |
+|-------------|----------|
+| Ulinc | LinkedIn automation (invitation-only platform) |
+| GoHighLevel (GHL) | CRM pipeline management |
+| Email (SMTP) | Email channel support |
+| LinkedIn MCP | MCP-based LinkedIn tool access |
+| NPPES | Healthcare provider lookup |
+| Outscraper | Business data enrichment |
+| WhatsApp | WhatsApp Business messaging |
+
+**Database:** PostgreSQL with Alembic migrations (6 migration versions covering initial schema, campaign manager, contact lifecycle, conversation stage, A/B testing, email channel).
+
+**Dashboard:** React (Vite) with 5 pages:
+- Pipeline — Lead pipeline visualization
+- Campaigns — Campaign management
+- Analytics — Performance analytics
+- Escalations — HITL escalation queue
+- Agent Chat — Direct agent interaction
+
+### 16.2 A/B Testing
+
+Built-in experiment framework with:
+- Multiple message variants per sequence step
+- Statistical significance calculation
+- Winner evaluation and auto-promotion
+
+### 16.3 Compliance
+
+BrightBeam targets the supplements/peptides/longevity vertical (David Steel / BrightBeam):
+- FDA compliance for supplement claims
+- FTC endorsement guidelines
+- LinkedIn Terms of Service adherence
+- CAN-SPAM compliance for email channel
+
+---
+
+## 17. Open Agent Trust Registry
+
+**Repository:** [github.com/pshkv/open-agent-trust-registry](https://github.com/pshkv/open-agent-trust-registry)
+
+A public, federated registry of trusted attestation issuers — the Certificate Authority trust store for the agent internet.
+
+### 17.1 Problem Statement
+
+When an AI agent presents an attestation ("I am authorized to act for this user"), the receiving service needs to verify the attestation issuer is legitimate. The registry is the master list of trustworthy badge issuers.
+
+### 17.2 Architecture
+
+**Registry Structure:**
+```
+registry/
+├── issuers/                    # One JSON file per registered issuer
+│   ├── agent-passport-system.json
+│   ├── agentid.json
+│   ├── agentinternetruntime.json
+│   ├── agora.json
+│   ├── arcede.json
+│   ├── arkforge.json
+│   ├── insumerapi.json
+│   └── qntm.json
+├── manifest.json               # Compiled, signed registry manifest
+└── proofs/                     # Cryptographic proofs
+```
+
+**CLI (`@open-agent-trust/cli`):**
+
+| Command | Function |
+|---------|----------|
+| `keygen` | Generate Ed25519 keypair for issuer identity |
+| `register` | Create registration file with domain proof |
+| `submit` | Submit registration to registry |
+| `verify` | Verify an attestation against registry |
+| `issue` | Issue an attestation for an agent |
+| `prove` | Generate cryptographic proof |
+| `compile` | Compile registry manifest |
+
+### 17.3 Security Properties
+
+1. **Permissionless registration** — Organizations register by cryptographically proving domain ownership. Automated CI pipeline adds them. No human gatekeepers.
+2. **Threshold governance** — Master list secured by 3-of-5 multi-signature scheme. Keys distributed to independent ecosystem leaders.
+3. **Zero-trust mirrors** — Registry manifest is cryptographically signed. Anyone can host a mirror; tampered manifests are rejected by SDK.
+4. **Local verification** — Services download registry once and verify locally. No per-request central server calls.
+
+### 17.4 CI/CD
+
+- `manifest-compiler.yml` — Compiles registry on changes
+- `verify-registration.yml` — Validates new registrations
+- `release.yml` — npm publish for CLI
+
+### 17.5 Research Paper
+
+"Composable Agent Trust Stack" — available at [arcede.com/papers](https://arcede.com/papers), documenting the broader vision and architecture.
+
+---
+
+## 18. Physical AI Use Cases
+
+### 18.1 Warehouse Delivery Robot (AMR)
+
+**Standards:** ISO 3691-4, IEC 62443
+
+| Action | SINT Tier | Constraint |
+|--------|-----------|------------|
+| LiDAR/camera subscribe | T0 | — |
+| Receive task via A2A | T1 | — |
+| Navigate (no humans) | T2 | maxVelocity: 1.5 m/s |
+| Navigate (humans detected) | T3 | maxVelocity: 0.3 m/s |
+| Gripper operation | T2 | maxForce: 30 N |
+| Emergency stop | NEVER BLOCKED | Invariant I-G2 |
+
+### 18.2 Industrial Welding Arm (ISO 10218)
+
+| Action | SINT Tier | Constraint |
+|--------|-----------|------------|
+| Read joint angles | T0 | — |
+| Plan weld path | T1 | — |
+| Begin weld sequence | T2 | maxForce: 500 N, cell_locked: true |
+| Move arm (human in cell) | T3 | maxVelocity: 0.1 m/s (ISO 10218-1 §5.4.3) |
+| E-stop override | BLOCKED | I-G2 invariant |
+
+### 18.3 Surgical Robot (FDA Class III)
+
+**Standards:** IEC 62304, IEC 60601-1-8, FDA 21 CFR Part 820, ISO 14971
+
+| Action | SINT Tier | Constraint |
+|--------|-----------|------------|
+| Instrument positioning | T2 | maxVelocity: 0.01 m/s (sub-mm precision) |
+| Force application | T2 | maxForce: 5 N |
+| Electrocautery | T3 | surgeon_confirmed: true (irreversible tissue damage) |
+| Emergency retract | NEVER BLOCKED | Safety retract always forwarded |
+
+### 18.4 UAV / Drone (MAVLink)
+
+**Standards:** ASTM F3548-21, EU U-Space, FAA AC 107-2B
+
+| Action | SINT Tier | Constraint |
+|--------|-----------|------------|
+| ARM/DISARM | T3 | Propulsion enable/disable |
+| TAKEOFF | T2 | altitude ≤ 120m (FAA Part 107) |
+| MISSION_START | T3 | Begins autonomous BVLOS |
+| FENCE_DISABLE | T3 | Removes safety boundary |
+
+### 18.5 Collaborative Robot (ISO/TS 15066)
+
+Power-and-force limiting mode with continuous human presence:
+- maxVelocity: 0.25 m/s, maxForce: 150 N (ISO/TS 15066 Table 1 transient contact)
+- Per-body-region force limits: Head 130N, Chest 140N, Hand 140N, Thigh 220N
+
+### 18.6 Underwater ROV (DNV-ST-0111)
+
+| Action | SINT Tier | Constraint |
+|--------|-----------|------------|
+| Thruster control | T2 | maxVelocity: 1.0 m/s |
+| Manipulator | T2 | maxForce: 200 N |
+| Emergency surface | ALWAYS FORWARDED | Never blocked |
+
+---
+
+## 19. Conformance & Testing
+
+### 19.1 Test Suite Summary
+
+| Component | Repository | Tests |
+|-----------|-----------|:---:|
+| SINT Protocol (full stack) | sint-protocol | **1,363** |
+| Operators Platform | sint-agents | **1,276+** |
+| **Ecosystem total** | all repos | **2,639+** |
+
+### 19.2 Protocol Test Coverage
+
+| Category | Tests | Coverage |
+|----------|:---:|----------|
+| Core types & Zod schemas | ~80 | Validation, DFA states |
+| Capability tokens | ~120 | Issuance, delegation, revocation, chain verification |
+| Policy gateway | ~150 | Tier assignment, constraint checking, escalation, plugins |
+| Evidence ledger | ~90 | Hash chain integrity, proof receipts, queries |
+| Bridge adapters | ~200 | MCP, ROS 2, MAVLink, A2A, gRPC, IoT, MQTT, OPC-UA |
+| OWASP Conformance | ~300 | All 10 ASI categories |
+| Economic layer | ~70 | Billing, budget, route selection |
+| Avatar/CSML | ~50 | Behavioral drift detection |
+| Persistence | ~60 | PostgreSQL, Redis, in-memory |
+| CLI (sintctl) | ~40 | Token management, approvals |
+| Edge mode conformance | ~40 | Offline operation |
+| Economy fixtures | ~20 | Pricing calculator validation |
+| Integration tests | ~140 | End-to-end gateway flows |
+
+### 19.3 OWASP Agentic Security Top 10 Coverage
+
+| # | OWASP Category | SINT Enforcement |
+|---|---|---|
+| ASI01 | Goal Hijack / Prompt Injection | GoalHijackPlugin (5-layer detection) |
+| ASI02 | Tool Misuse | Tier-based approval gates + forbidden combo detection |
+| ASI03 | Identity Abuse | Ed25519 capability tokens + W3C DID |
+| ASI04 | Supply Chain Compromise | DefaultSupplyChainVerifier (model hash + tool manifest) |
+| ASI05 | Code Execution | T3_COMMIT classification for all exec tools |
+| ASI06 | Memory Poisoning | MemoryIntegrityChecker (replay, privilege, overflow) |
+| ASI07 | Inter-Agent Manipulation | Cross-agent injection detection in GoalHijackPlugin |
+| ASI08 | Cascading Failure | CircuitBreakerPlugin + per-agent budget caps |
+| ASI09 | Trust Exploitation | Attenuation-only delegation (max depth 3) |
+| ASI10 | Rogue Agent | CSML auto-escalation + CircuitBreaker auto-trip |
+
+### 19.4 MCP Attack Surface Conformance
+
+Dedicated 10-test suite validates each OWASP ASI category against the gateway choke point using real MCP tool calls.
+
+---
+
+## 20. Compliance & Standards Mapping
+
+| Standard | Scope | SINT Coverage |
+|----------|-------|---------------|
+| **OWASP Agentic Top 10** | AI agent security | 10/10 categories (ASI01–ASI10) |
+| **EU AI Act** | High-risk AI systems | Art. 9 (risk management → CSML + tier system), Art. 11 (technical documentation → evidence ledger), Art. 13 (transparency → audit trail), Art. 14(4)(e) (stop button → CircuitBreakerPlugin) |
+| **IEC 62443** | Industrial cybersecurity | Zone/conduit mapping via bridge adapters, SL-T alignment with tier system |
+| **ISO 10218-1/2** | Industrial robot safety | Force/velocity constraints, collaborative space monitoring, protective stop forwarding |
+| **ISO/TS 15066** | Collaborative robots | Power-and-force limiting mode, per-body-region contact force limits |
+| **ISO 14971** | Medical device risk management | Risk classification → tier assignment, residual risk tracking via ledger |
+| **IEC 62304** | Medical device software | Traceability via evidence ledger, software unit verification |
+| **IEC 60601-1-8** | Medical electrical equipment alarms | Alarm priority mapping to tier escalation |
+| **FDA 21 CFR Part 820** | Medical device QMS | Design controls, production records via audit trail |
+| **NIST AI RMF 1.0** | AI risk management | MAP (resource classification), MEASURE (CSML), MANAGE (tier escalation), GOVERN (audit) |
+| **NIST SP 800-82 Rev. 3** | OT security | Network segmentation (bridge isolation), access control (tokens), monitoring (ledger) |
+| **NATO STANAG 4586** | UAS control | Command/control mapping via MAVLink bridge, IFF via capability tokens |
+| **ASTM F3548-21** | UAS remote ID | Agent identity via Ed25519 keys, broadcast via capability token metadata |
+| **FAA AC 107-2B** | sUAS operations | Altitude constraints, BVLOS approval mapping to T3 |
+| **DNV-ST-0111** | Subsea systems | ROV action classification, emergency surface priority |
+
+---
+
+## 21. Competitive Landscape
+
+### 21.1 Protocol Comparison Matrix
+
+| Feature | SINT | MCP (Anthropic) | ACP (IBM/LF) | A2A (Google) | AgentProtocol | ANP | AG-UI |
+|---------|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| Physical constraints | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Graduated authorization | ✅ (T0–T3) | ❌ | Partial | ❌ | ❌ | ❌ | ❌ |
+| Capability tokens | ✅ (Ed25519) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Hash-chain audit | ✅ (SHA-256) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Forbidden combo detection | ✅ (DFA) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Behavioral drift (CSML) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Circuit breaker | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Economic metering | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Plugin architecture | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Robot/drone bridges | ✅ (ROS2, MAVLink) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| IoT/OT bridges | ✅ (MQTT, OPC-UA) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| OWASP ASI coverage | 10/10 | 0/10 | ~3/10 | ~1/10 | 0/10 | 0/10 | 0/10 |
+| EU AI Act compliance | ✅ | ❌ | Partial | ❌ | ❌ | ❌ | ❌ |
+| Tests | 1,363 | N/A | N/A | N/A | N/A | N/A | N/A |
+
+**Key insight:** SINT is not competing with these protocols. It is a **security enforcement layer** that wraps around them. MCP + SINT = secured MCP. A2A + SINT = secured A2A.
+
+### 21.2 Market Context
+
+- **Agentic AI market:** $10.86B (March 2026), 46% CAGR → $52.6B by 2030
+- **Physical AI security:** No established market leader; SINT is first-to-market with a comprehensive protocol
+- **ROSClaw (Cardenas et al., 2026):** First academic validation of the need for runtime authorization in ROS 2 agentic systems — cites SINT approach
+- **OWASP Agentic Security:** Published March 2026; SINT achieved 10/10 coverage within 4 weeks
+
+---
+
+## 22. Research Agenda (2026–2031)
+
+### Problem 1: Swarm Coordination Security (2026–2027)
+
+**Threat:** A drone swarm of N agents shares a task. Each individual agent has a valid capability token. But the collective action — N drones converging on a target — is dangerous in ways no individual token expresses.
+
+**Research directions:**
+1. **Swarm capability token** — Group token encoding collective constraints: `maxSwarmDensity` (agents/m³), `minInterAgentDistance` (m), `maxCollectiveKineticEnergy` (Σ½mv² in joules), `synchronizationWindow` (ms)
+2. **Collective CSML** — `computeCsml()` extended to agent cohorts with tighter threshold θ_swarm
+3. **Byzantine-resilient coordination** — k-of-N threshold signature scheme for compromised swarm members
+
+**Target standard:** NATO STANAG 4586 (UAS control), MIL-STD-1553B (bus security)
+
+### Problem 2: Sub-Human-Reaction-Time Safety (2026–2028)
+
+**Threat:** Physical AI operates at 1 kHz (ROS 2 control loops). Human approval has 200–500 ms latency. A robot executes 200–500 control cycles while waiting.
+
+**Research directions:**
+1. **Probabilistic constraint envelopes** — Replace binary checks with Gaussian confidence bounds
+2. **Predictive tier assignment** — ML model predicting which upcoming actions will need T2/T3 approval, pre-fetching human attention
+3. **Safety-bounded autonomy** — Pre-approved trajectory corridors with divergence thresholds for automatic invalidation
+
+### Problem 3: Multi-Modal Sensor Fusion Trust (2027–2028)
+
+**Threat:** CSML currently tracks action-level metrics. Physical AI decisions are based on sensor fusion (LiDAR + camera + IMU). A compromised sensor can cause correct-looking actions that are physically dangerous.
+
+**Research directions:**
+1. **Sensor attestation** — Each sensor produces signed readings; gateway verifies sensor integrity
+2. **Fusion consistency scoring** — Cross-validate sensor modalities; flag inconsistencies
+3. **Adversarial sensor detection** — Detect spoofed LiDAR, camera injection attacks
+
+### Problem 4: Cross-Organizational Trust Federation (2027–2029)
+
+**Threat:** Agent A (authorized by Company X) needs to interact with Agent B (authorized by Company Y). Neither trusts the other's token authority.
+
+**Research directions:**
+1. **Federated capability negotiation** — Mutual attestation protocol
+2. **Trust registry integration** — Open Agent Trust Registry as the PKI root
+3. **Cross-domain CSML** — Behavioral reputation that transfers across organizations
+
+### Problem 5: Formal Verification of Safety Properties (2028–2031)
+
+**Threat:** The gateway's safety invariants are currently tested empirically (1,363 tests). For FDA Class III and aerospace, formal proofs are required.
+
+**Research directions:**
+1. **TLA+ specification** — Model-check core gateway invariants
+2. **Coq/Lean proofs** — Formally verify token delegation attenuation
+3. **Isabelle/HOL** — Prove hash chain integrity properties
+
+---
+
+## 23. Deployment & Operations
+
+### 23.1 Quick Start (MCP Proxy)
+
+For immediate use with Claude Desktop or Cursor:
+
+```bash
+npm install -g @sint/bridge-mcp
+sintctl token create --resource "mcp://*" --actions read,call --ttl 24h
+```
+
+Add to Claude Desktop MCP config:
+```json
+{
+  "mcpServers": {
+    "sint-proxy": {
+      "command": "npx",
+      "args": ["@sint/bridge-mcp", "--downstream", "filesystem,exec"]
+    }
+  }
+}
+```
+
+### 23.2 Production Deployment (Docker)
+
+```yaml
+# docker-compose.yml
+services:
+  gateway:
+    image: ghcr.io/sint-ai/sint-gateway:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - SINT_PERSISTENCE=postgres
+      - DATABASE_URL=postgresql://sint:pass@db:5432/sint
+      - SINT_REDIS_URL=redis://redis:6379
+    depends_on: [db, redis]
+
+  dashboard:
+    image: ghcr.io/sint-ai/sint-dashboard:latest
+    ports:
+      - "3001:80"
+    environment:
+      - VITE_GATEWAY_URL=http://gateway:3000
+
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: sint
+      POSTGRES_USER: sint
+      POSTGRES_PASSWORD: pass
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+
+volumes:
+  pgdata:
+```
+
+### 23.3 CLI (`sintctl`)
+
+```bash
+# Token management
+sintctl token create --resource "ros2:///cmd_vel" --actions publish --maxVelocity 1.5
+sintctl token list
+sintctl token revoke <tokenId>
+sintctl token delegate --parent <tokenId> --maxVelocity 0.5  # Attenuated
+
+# Approvals
+sintctl approve list --pending
+sintctl approve accept <requestId>
+sintctl approve deny <requestId> --reason "Too fast"
+
+# Audit
+sintctl ledger query --agent <key> --since 2026-04-01 --tier T3
+sintctl ledger verify --entry <entryId>  # Verify hash chain
+sintctl ledger export --format jsonl > audit.jsonl
+
+# Policy
+sintctl policy list
+sintctl policy add --resource "mcp://exec/*" --tier T3_COMMIT
+sintctl policy test --resource "ros2:///cmd_vel" --action publish
+
+# Scanning
+sintctl scan --server filesystem  # Security scan MCP server
+```
+
+### 23.4 Python SDK
+
+```python
+from sint import SintClient, SintScanner
+
+# Client usage
+client = SintClient(gateway_url="http://localhost:3000")
+token = client.create_token(
+    resource="mcp://filesystem/*",
+    actions=["read"],
+    ttl_hours=24
+)
+
+# Security scanning
+scanner = SintScanner(gateway_url="http://localhost:3000")
+results = scanner.scan_server("filesystem")
+for finding in results.findings:
+    print(f"{finding.severity}: {finding.description}")
+```
+
+### 23.5 Go SDK
+
+```go
+import "github.com/sint-ai/sint-protocol/sdks/sint-go"
+
+client := sint.NewClient("http://localhost:3000")
+token, err := client.CreateToken(sint.TokenRequest{
+    Resource: "ros2:///cmd_vel",
+    Actions:  []string{"publish"},
+    MaxVelocityMps: 1.5,
+})
+```
+
+---
+
+## 24. Roadmap
+
+### Phase 1: Foundation (Completed — Q1 2026)
+- ✅ Core protocol types and Zod schemas
+- ✅ Policy Gateway with tier assignment and plugin system
+- ✅ Ed25519 capability tokens with delegation chains
+- ✅ SHA-256 hash-chained evidence ledger
+- ✅ MCP bridge adapter (primary adoption vector)
+- ✅ Economic layer with metered billing
+- ✅ OWASP ASI 10/10 conformance
+- ✅ 1,363 tests passing
+
+### Phase 2: Bridges & SDKs (Q2 2026)
+- ✅ ROS 2 bridge adapter
+- ✅ MAVLink v2 bridge adapter
+- ✅ Google A2A bridge adapter
+- ✅ gRPC bridge adapter
+- ✅ IoT/MQTT/OPC-UA/Open-RMF bridges
+- ✅ Python SDK (1,962 lines)
+- ✅ Go SDK (stub)
+- ✅ TypeScript client SDK
+- ✅ PostgreSQL persistence (518 lines)
+- ✅ Redis persistence + revocation bus
+- ⭕ npm publish 8 packages to `@sint/` scope (ready)
+- ⭕ SPAI 2026 submission (deadline: May 7)
+
+### Phase 3: Production Hardening (Q3 2026)
+- TEE attestation (Intel SGX, ARM TrustZone, AMD SEV)
+- Formal verification (TLA+ for gateway invariants)
+- Kubernetes Operator for gateway deployment
+- Prometheus/Grafana monitoring integration
+- SIEM export connectors (Splunk, Datadog, ELK)
+- Edge mode for bandwidth-constrained deployments
+- SOC 2 Type II audit preparation
+
+### Phase 4: Swarm & Federation (Q4 2026 – Q1 2027)
+- Swarm capability tokens
+- Collective CSML
+- Cross-organizational trust federation
+- Byzantine-resilient coordination
+- Agent Trust Registry integration as federation root
+
+### Phase 5: Formal Safety (2027–2031)
+- Probabilistic constraint envelopes
+- Predictive tier assignment
+- Multi-modal sensor fusion trust
+- Formal proofs (Coq/Lean/Isabelle)
+- Medical device certification support (IEC 62304 + FDA)
+- Aerospace certification support (DO-178C)
+
+---
+
+## 25. References
+
+### Academic
+1. Cardenas, I.S., Arnett, M.A., Yeo, N.C., Sah, L., Kim, J.-H. (2026). "ROSClaw: An OpenClaw ROS 2 Framework for Agentic Robot Control and Interaction." arXiv:2603.26997.
+2. OWASP. (2026). "Agentic AI Security Initiative — Top 10 for Agentic AI." owasp.org.
+3. Anthropic. (2024). "Model Context Protocol Specification." spec.modelcontextprotocol.io.
+4. MCP Security Analysis. (2026). arXiv:2601.17549.
+5. Google. (2025). "Agent-to-Agent (A2A) Protocol." github.com/google/A2A.
+
+### Standards
+6. IEC 62443-3-3:2013. Industrial communication networks — IT security for networks and systems.
+7. ISO 10218-1:2011. Robots and robotic devices — Safety requirements for industrial robots.
+8. ISO/TS 15066:2016. Robots and robotic devices — Collaborative robots.
+9. ISO 14971:2019. Medical devices — Application of risk management.
+10. IEC 62304:2015. Medical device software — Software life cycle processes.
+11. IEC 60601-1-8:2020. Medical electrical equipment — Alarm systems.
+12. FDA 21 CFR Part 820. Quality System Regulation.
+13. NIST AI RMF 1.0 (2023). Artificial Intelligence Risk Management Framework.
+14. NIST SP 800-82 Rev. 3 (2023). Guide to Operational Technology (OT) Security.
+15. NATO STANAG 4586. Standard Interfaces of UAV Control System.
+16. ASTM F3548-21. Standard Specification for UAS Remote ID.
+17. EU AI Act (2024). Regulation (EU) 2024/1689 — Harmonised rules on artificial intelligence.
+18. DNV-ST-0111. Assessment of station keeping capability of dynamic positioning vessels.
+
+### SINT Ecosystem
+19. SINT Protocol Repository. github.com/sint-ai/sint-protocol.
+20. SINT Operators Platform. github.com/sint-ai/sint-agents.
+21. SINT Virtual CMO. github.com/sint-ai/sint-cmo-operator.
+22. SINT Avatars. github.com/sint-ai/sint-avatars.
+23. SINT Outreach. github.com/sint-ai/sint-outreach.
+24. Open Agent Trust Registry. github.com/pshkv/open-agent-trust-registry.
+25. Autonomous Execution Engine. github.com/sint-ai/autonomous-execution-engine.
+
+---
+
+## Appendix A: Gateway Invariants
+
+| ID | Invariant | Description |
+|----|-----------|-------------|
+| I-G1 | Single choke point | All actions pass through Policy Gateway |
+| I-G2 | E-stop never blocked | Emergency stop signals are always forwarded |
+| I-G3 | Tier monotonicity | Tiers can only escalate during request lifecycle |
+| I-G4 | Token attenuation | Delegation can only narrow scope |
+| I-G5 | Ledger append-only | Evidence ledger entries never modified or deleted |
+| I-G6 | Hash chain integrity | Each entry hash includes previous entry hash |
+| I-G7 | Budget fail-deny | Insufficient balance always denies (never escalates) |
+| I-G8 | Timeout fail-deny | Approval timeout defaults to deny |
+
+## Appendix B: Package Dependency Graph
+
+```
+@sint/core
+  ├── @sint/gate-capability-tokens
+  ├── @sint/gate-policy-gateway
+  │     ├── @sint/gate-capability-tokens
+  │     ├── @sint/gate-evidence-ledger
+  │     └── @sint/bridge-economy
+  ├── @sint/gate-evidence-ledger
+  ├── @sint/persistence
+  │     └── @sint/persistence-postgres
+  ├── @sint/bridge-mcp
+  │     └── @sint/gate-policy-gateway
+  ├── @sint/bridge-economy
+  └── @sint/client
+```
+
+## Appendix C: Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SINT_PERSISTENCE` | `memory` | `memory` \| `postgres` \| `redis` |
+| `DATABASE_URL` | — | PostgreSQL connection string |
+| `SINT_REDIS_URL` | — | Redis connection string |
+| `SINT_TOKEN_TTL` | `86400000` | Default token TTL (ms) |
+| `SINT_MAX_DELEGATION_DEPTH` | `3` | Maximum delegation chain depth |
+| `SINT_CSML_THRESHOLD` | `0.30` | Default CSML escalation threshold |
+| `SINT_CIRCUIT_BREAKER_THRESHOLD` | `5` | Consecutive denials to auto-trip |
+| `SINT_APPROVAL_TIMEOUT` | `30000` | Default approval timeout (ms) |
+| `SINT_LOG_LEVEL` | `info` | `debug` \| `info` \| `warn` \| `error` |
+
+---
+
+**License:** MIT
+
+**Repository:** [github.com/sint-ai/sint-protocol](https://github.com/sint-ai/sint-protocol)
+
+**Contact:** i@pshkv.com | [sint.gg](https://sint.gg)
+
+© 2026 SINT AI Lab / PSHKV Inc. All rights reserved.
