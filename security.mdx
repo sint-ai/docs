@@ -1,171 +1,314 @@
 ---
-title: "SINT Security, Privacy & Confidentiality"
-description: "Purpose – A deeply detailed, auditable, and technically rigorous blueprint for how SINT achieves end-to-end privacy, security, and confidential AI execution. Designed for engineers, CISOs, compliance leaders, and ecosystem partners seeking provable trust."
+title: "Security Architecture"
+description: "SINT Protocol's defense-in-depth security model — from cryptographic primitives to runtime enforcement."
+sidebarTitle: "Security"
 ---
 
-## **0 Glossary & Core Concepts**
+SINT Protocol implements defense-in-depth security across every layer: cryptographic identity, capability-based access control, runtime policy enforcement, anomaly detection, and tamper-evident audit logging.
 
-| **Acronym**                  | **Meaning**                                                                        |
-| :--------------------------- | :--------------------------------------------------------------------------------- |
-| **CVM**                      | Confidential Virtual Machine (Intel TDX / AMD SEV / NVIDIA CCTEE)                  |
-| **MCP**                      | Model‑Context Protocol — SINT’s agent runtime interface                            |
-| **ZT‑HTTPS**                 | Zero‑Trust HTTPS with remote attestation and mTLS                                  |
-| **ConsentPass**              | Revocable, NFT-based, user-controlled data and key access token                    |
-| **ProofReceipt**             | On‑chain attestation that binds input, model, output, and security policy          |
-| **SINT Bridge**              | Framework for connecting Web2 APIs, Web3 chains, and confidential compute securely |
-| **Walrus / Seal / Nautilus** | Sui primitives for secure storage, policy gating, and TEE attestation              |
+This page documents the actual security controls implemented in `sint-ai/sint-protocol` — verified against source code, not aspirational.
 
 ---
 
-## **1 Threat Model**
+## Threat Model
 
-### **1.1 Asset Categories**
+### Asset Categories
 
-- **Personal Data** – User memory vaults, documents, sensor data, wallet keys, and contextual metadata.
-- **Model Intellectual Property** – Proprietary model weights, prompt chains, and fine-tuned behaviors.
-- **Financial Credentials** – Keys and tokens used by autonomous agents for DeFi, payments, and trading.
-- **Operational States** – Logs, orchestration flows, and runtime ephemeral data.
+| Asset | Examples | Protection |
+|:------|:---------|:-----------|
+| **Physical Actuators** | Robot arms, drones, vehicles | Capability tokens + constraint enforcement |
+| **Agent Credentials** | Ed25519 keypairs, delegation chains | Hardware-backed key generation, token expiry |
+| **Audit Trail** | Evidence ledger, hash chain | SHA-256 append-only chain, proof receipts |
+| **Policy Configuration** | Tier definitions, geofences, force limits | API key-protected admin endpoints |
+| **Runtime State** | Active tokens, approval queues, rate limits | In-memory isolation, per-key rate limiting |
 
-### **1.2 Threat Vectors**
+### Threat Vectors Addressed
 
-| **Category**           | **Example Attack**                                       |
-| :--------------------- | :------------------------------------------------------- |
-| Insider threats        | Cloud provider admin reading live memory                 |
-| External attackers     | API key theft, container escape, GPU side-channel attack |
-| Regulatory & legal     | Court orders forcing plaintext data delivery             |
-| Malicious skills       | Marketplace agents exfiltrating user data                |
-| Supply chain           | Compromised dependencies, malicious container images     |
-| Quantum precomputation | Future risk to legacy cryptographic algorithms           |
-
-### **1.3 Security Goals**
-
-1. **Confidentiality** – Encryption at rest, in transit, and in use.
-2. **Integrity** – Signed, attested, verified code only.
-3. **Verifiability** – ProofReceipt logs every inference & training step.
-4. **User Sovereignty** – ConsentPass revocation instantly halts data access.
-5. **Regulatory Alignment** – Controls mapped to SOC2, ISO 27001, HIPAA, GDPR.
+| Vector | Attack Example | Mitigation |
+|:-------|:---------------|:-----------|
+| **Token forgery** | Crafting a fake capability token | Ed25519 signature verification (`@noble/ed25519`) |
+| **Privilege escalation** | Child token exceeding parent permissions | Attenuation-only delegation with `Math.min()` enforcement |
+| **Constraint bypass** | Exceeding force/velocity limits | Runtime `Math.min(token_limit, envelope_limit)` on every intercept |
+| **Goal hijacking** | Prompt injection to override safety policy | 25+ regex pattern detector with confidence scoring |
+| **Replay attacks** | Reusing expired tokens | Timestamp validation, token expiry enforcement |
+| **Audit tampering** | Modifying evidence records | SHA-256 hash chain with genesis hash, integrity verification |
+| **Gateway bypass** | Reaching actuators without policy check | Single `intercept()` entry point, no alternate code paths |
+| **Tier manipulation** | Downgrading safety tier to avoid controls | Monotonic tier escalation only (tiers never decrease) |
 
 ---
 
-## **2 Data Lifecycle & Architecture**
+## Cryptographic Foundation
 
-User → Edge Encryption → Walrus Immutable Storage → Nautilus CVM Runtime → ProofReceipt → Encrypted Output → User Client
+### Ed25519 Identity
 
-| **Stage**         | **Security Controls**                                     | **Key Management**                          |
-| :---------------- | :-------------------------------------------------------- | :------------------------------------------ |
-| Edge encryption   | AES-256-GCM on device                                     | TPM-backed device keys \+ ConsentPass       |
-| Storage           | Walrus versioned blobs                                    | Shamir-split vault keys (t-of-n validators) |
-| Runtime execution | Nautilus-attested CVMs (Intel TDX, AMD SEV, NVIDIA CCTEE) | Ephemeral enclave keys                      |
-| Transport         | ZT-HTTPS \+ mutual attestation                            | Ephemeral TLS session keys                  |
-| Output            | End-to-end encrypted data return                          | User-only decrypt keys                      |
+All agent identity is based on Ed25519 public key cryptography via the audited, zero-dependency [`@noble/ed25519`](https://github.com/paulmillr/noble-ed25519) library.
 
----
-
-## **3 Core Security Components**
-
-### **3.1 CVM Mesh & Attestation**
-
-- Multi-cloud CVM clusters with verified code and ephemeral workloads.
-- Attestation artifacts committed to chain for public verification.
-- GPU partitioning (MIG/IOMMU) preventing data leakage.
-
-### **3.2 Selective Disclosure Engine**
-
-- Policy-as-code DSL compiled to Move bytecode.
-- Automatic redaction & consent validation before external calls.
-- Zero data egress without explicit ProofReceipt authorization.
-
-### **3.3 Secure Marketplace Sandbox**
-
-- All skills run in isolated microVMs with seccomp-filtered syscalls.
-- Pre-deployment scanning with Semgrep, Trivy, and AI code analyzers.
-- Dynamic runtime monitoring using eBPF for anomaly detection.
-
-### **3.4 ConsentPass Control Layer**
-
-- NFT-gated, revocable data access.
-- Revocation triggers immediate key shred and CVM halt.
-- User-centric multi-tenant policies with fine-grained scope.
-
----
-
-## **4 Cryptographic Foundation**
-
-| **Layer**       | **Algorithm**                         | **Application**                 |
-| :-------------- | :------------------------------------ | :------------------------------ |
-| Edge            | AES-256-GCM                           | Device-level encryption         |
-| Key split       | Shamir’s Secret Sharing t=3, n=5      | Validator-managed custody       |
-| Attestation     | Ed25519 \+ BLAKE3 Merkle root         | ProofReceipt chain anchoring    |
-| Audit           | Immutable BLAKE3 logs                 | Hourly commit to Sui ledger     |
-| IP watermarking | ChaCha20-Poly1305                     | Protect model outputs & weights |
-| Future ready    | Kyber (post-quantum) pilot in roadmap |                                 |
-
----
-
-## **5 Compliance & Governance**
-
-- Controls mapped to SOC2 Type II, ISO 27001, HIPAA, and GDPR.
-- Privacy impact assessments run quarterly.
-- AI agent behavior sandbox logs for AI Act readiness (EU 2026).
-
----
-
-## **6 Incident Response & Revocation Workflow**
-
-1. ConsentPass panic burn executed (user or admin).
-2. t-of-n validator threshold triggers shard destruction.
-3. Runtime enclave halts due to attestation mismatch.
-4. Walrus blobs remain ciphertext-only.
-5. Full RCA and public post-mortem within 24 hours.
-6. Incident feed shared via verifiable webhook to affected partners.
-
----
-
-## **7 Deployment Models**
-
-### **SaaS Cloud**
-
-- Multi-region clusters (US, EU, APAC) on Sapphire Rapids CPUs & H100 GPUs.
-- Infrastructure-as-code pinned base images.
-- Auto-attestation for ephemeral job execution.
-
-### **Enterprise Self-Host**
-
-- Helm charts with integrated key custody.
-- On-prem ConsentPass for data & runtime isolation.
-- Air-gapped mode for critical industries (finance, healthcare).
-
----
-
-## **8 Security Roadmap**
-
-| **Quarter** | **Milestone**                                              |
-| :---------- | :--------------------------------------------------------- |
-| Q3 2025     | MCP runtime sandbox verification                           |
-| Q4 2025     | SOC2 Type I audit \+ public bug bounty                     |
-| Q1 2026     | Differential privacy \+ synthetic data tooling             |
-| Q2 2026     | FIPS 140-3 certified modules \+ secure GPU enclave support |
-| Q4 2026     | Homomorphic inference pilot                                |
-
----
-
-## **9 API Security Flow Example**
-
-```md
-POST /v1/inference
-X-SINT-Proof: 0x7a2e...
-X-SINT-Blob: walrus://bafybeih...
-Body: { "prompt": "..." }
+```
+Source: packages/capability-tokens/src/crypto.ts
 ```
 
-- Gateway validates ProofReceipt and attestation before routing.
+| Operation | Implementation | Notes |
+|:----------|:---------------|:------|
+| Key generation | `ed25519.utils.randomPrivateKey()` | 32-byte random private key |
+| Signing | `ed25519.sign(message, privateKey)` | Deterministic signatures |
+| Verification | `ed25519.verify(signature, message, publicKey)` | Constant-time comparison |
+
+<Warning>
+Private keys are never transmitted. The gateway server only sees public keys (in the `Ed25519-Signature` header) and signatures.
+</Warning>
+
+### Capability Token Structure
+
+```typescript
+interface SintCapabilityToken {
+  agentId: string;           // Ed25519 public key (hex)
+  resource: string;          // Target resource identifier
+  action: string;            // Permitted action
+  constraints: {
+    force_newtons?: number;
+    velocity_mps?: number;
+    temperature_celsius?: number;
+    geofence?: [number, number][];  // Polygon vertices
+    joint_angles?: Record<string, [number, number]>;
+  };
+  tier: 1 | 2 | 3 | 4 | 5;
+  expiry: number;            // Unix timestamp
+  delegationChain: string[]; // Parent token signatures
+  signature: string;         // Ed25519 signature (hex)
+}
+```
+
+### Delegation Security
+
+Tokens can be delegated up to **3 levels deep**. Each delegation enforces **attenuation only** — child tokens can never exceed parent permissions:
+
+```
+Source: packages/capability-tokens/src/delegator.ts
+```
+
+```typescript
+// Constraint attenuation — always Math.min
+force:    Math.min(parent.force,    requested.force)
+velocity: Math.min(parent.velocity, requested.velocity)
+tier:     Math.max(parent.tier,     requested.tier)  // Higher tier = more restricted
+```
+
+<Info>
+Delegation depth is capped at 3 to prevent unbounded chain verification cost and reduce attack surface from long delegation chains.
+</Info>
 
 ---
 
-## **Key Takeaways** 
+## Authentication & Authorization
 
-- **Confidential by default** – Encryption in transit, rest, and in-use enclaves.
-- **Provable trust** – Attestation \+ ProofReceipt on every action.
-- **User sovereignty** – Complete data ownership and instant revocation.
-- **Regulator-ready** – Compliance-first architecture with audit hooks.
-- **Innovation-safe** – Enables Jarvis-class AI agents without trust compromise.
+### Gateway Auth Model
+
+The gateway server (`apps/gateway-server/src/middleware/auth.ts`) implements three authentication layers:
+
+| Path Type | Auth Method | Enforced On |
+|:----------|:-----------|:------------|
+| **Exempt** | None | `/v1/health`, `/v1/keypair`, `/.well-known/sint.json`, `/v1/openapi.json`, `/v1/schemas` |
+| **Agent** | Ed25519-Signature header | POST/PUT/PATCH on non-admin routes |
+| **Admin** | X-API-Key header | `/v1/tokens`, `/v1/tokens/revoke`, `/v1/ledger`, `/v1/approvals` |
+
+**Ed25519 Signature Header Format:**
+```
+Ed25519-Signature: <publicKeyHex>:<signatureHex>
+```
+
+The agent signs the raw JSON request body. The gateway verifies the signature before processing.
+
+### Rate Limiting
+
+Per-key rate limiting (`100 requests/minute` default) with in-memory bucket tracking:
+
+```
+Source: apps/gateway-server/src/middleware/auth.ts → rateLimit()
+```
+
+Response headers:
+- `X-RateLimit-Limit` — Maximum requests per window
+- `X-RateLimit-Remaining` — Requests remaining
+- `X-RateLimit-Reset` — Window reset timestamp
+
+<Note>
+Rate limit state is in-memory and resets on server restart. For production multi-instance deployments, wire the Redis adapter from `@sint/persistence-postgres`.
+</Note>
+
+---
+
+## Runtime Policy Enforcement
+
+### Intercept Pipeline
+
+Every action request passes through a single pipeline with no bypass paths:
+
+```
+Source: packages/policy-gateway/src/gateway.ts → intercept()
+```
+
+<Steps>
+  <Step title="Schema Validation">
+    Zod schema validates the incoming request structure. Malformed requests are rejected before any policy evaluation.
+  </Step>
+  <Step title="Token Verification">
+    Ed25519 signature verification of the capability token. Expiry check. Delegation chain validation (max depth 3).
+  </Step>
+  <Step title="Constraint Checking">
+    Physical constraints (force, velocity, temperature, geofence) are checked against both the token limits and the execution envelope. Uses `Math.min()` — the strictest limit always wins.
+    ```
+    Source: packages/policy-gateway/src/constraint-checker.ts
+    ```
+  </Step>
+  <Step title="Tier Assignment">
+    Safety tier is determined based on context. Tiers only escalate (monotonic). Physical context like human detection forces higher tier.
+    ```
+    Source: packages/policy-gateway/src/tier-assigner.ts
+    ```
+  </Step>
+  <Step title="Goal Hijack Detection">
+    5-layer heuristic scanner with 25+ regex patterns across categories: ROLE_OVERRIDE, ESCALATION, EXFILTRATION, CROSS_AGENT, INJECTION. Confidence scoring with multi-pattern bonus. Threshold: 0.6.
+    ```
+    Source: packages/policy-gateway/src/goal-hijack.ts
+    ```
+  </Step>
+  <Step title="CSML Anomaly Scoring">
+    Continuous Safety Monitoring Language evaluates behavioral anomalies. Auto-trips circuit breaker above threshold.
+  </Step>
+  <Step title="Evidence Logging">
+    Every decision (approve, deny, escalate) is appended to the SHA-256 hash chain with full context.
+  </Step>
+</Steps>
+
+### Circuit Breaker (E-Stop)
+
+The emergency stop mechanism is **invariant I-G2** — it preempts all other processing:
+
+- CSML anomaly score above threshold → automatic trip
+- Manual trip via API → immediate halt
+- Recovery requires explicit reset with admin authorization
+
+<Warning>
+When the circuit breaker trips, ALL pending requests are denied. There is no grace period or partial processing. This is by design — safety-critical systems must fail closed.
+</Warning>
+
+---
+
+## Evidence Ledger
+
+### Hash Chain Integrity
+
+```
+Source: packages/evidence-ledger/src/writer.ts
+```
+
+Every event in the evidence ledger includes a SHA-256 hash of the previous event, forming a tamper-evident chain:
+
+```typescript
+// Hash computation (excluding hash field itself)
+function computeEventHash(event: Omit<SintLedgerEvent, "hash">): SHA256 {
+  const bytes = new TextEncoder().encode(JSON.stringify({
+    sequenceNumber: event.sequenceNumber,
+    timestamp: event.timestamp,
+    previousHash: event.previousHash,
+    // ... all event fields
+  }));
+  return bytesToHex(sha256(bytes));
+}
+```
+
+| Property | Implementation |
+|:---------|:--------------|
+| Genesis hash | Fixed constant, serves as chain anchor |
+| Append-only | `LedgerWriter` only exposes `append()`, no update/delete |
+| Integrity check | `verifyChain()` walks the entire chain, verifying each `previousHash` pointer |
+| Proof receipts | `generateProof()` produces a hash chain subset proving event inclusion |
+
+### SIEM Export
+
+```
+Source: packages/evidence-ledger/src/siem-exporter.ts
+```
+
+The ledger supports exporting events to Security Information and Event Management systems for enterprise integration.
+
+### Chain of Custody
+
+```
+Source: packages/evidence-ledger/src/chain-of-custody.ts
+```
+
+Maintains provenance tracking for physical assets and data flows through the system.
+
+---
+
+## Five-Tier Safety System
+
+| Tier | Name | Requirements | Constraints |
+|:-----|:-----|:-------------|:------------|
+| **T1** | Sandbox | Simulation only | No physical actuation |
+| **T2** | Guarded | Human-in-the-loop approval | velocity < 0.5 m/s |
+| **T3** | Supervised | Continuous monitoring + alerts | force < 50 N |
+| **T4** | Autonomous | Full audit trail, no human gate | All constraints enforced |
+| **T5** | Unsupervised | Classified clearance | Military/space applications |
+
+<Info>
+Tier escalation is **monotonic** — once a context escalates to a higher tier (e.g., human detected → T2 minimum), it cannot be downgraded within that session. This prevents race conditions where a brief sensor gap could temporarily lower safety requirements.
+</Info>
+
+### OWASP ASI Coverage
+
+SINT Protocol maps its controls to the [OWASP Agentic Security Initiative](https://owasp.org/www-project-agentic-security/) framework:
+
+```
+Source: packages/core/src/constants/compliance.ts
+```
+
+Coverage includes identity verification, capability scoping, runtime monitoring, audit logging, and incident response — with compliance mapping to SOC2, ISO 27001, and emerging AI safety regulations.
+
+---
+
+## Dependency Security
+
+### Current Status
+
+As of April 2026, `pnpm audit` reports **0 vulnerabilities** across the entire monorepo.
+
+| Dependency | Previous Issue | Resolution |
+|:-----------|:---------------|:-----------|
+| `esbuild` | GHSA-67mh (dev server CORS bypass) | Upgraded to ≥0.25.0 |
+| `path-to-regexp` | GHSA-j3q9, GHSA-27v5 (ReDoS) | Override to ≥8.4.0 |
+| `picomatch` | GHSA-c2c7, GHSA-3v7f (ReDoS, POSIX injection) | Override to ≥4.0.4 |
+
+### Supply Chain Controls
+
+- All dependencies pinned via `pnpm-lock.yaml`
+- Zero-dependency cryptographic libraries (`@noble/ed25519`, `@noble/hashes`)
+- Turborepo build cache for reproducible builds
+- CI runs `pnpm audit` on every PR
+
+---
+
+## Production Deployment Checklist
+
+<Warning>
+If `SINT_API_KEY` is not set, admin endpoint authentication is **skipped** (dev mode). Always set this in production.
+</Warning>
+
+| Item | Required | Notes |
+|:-----|:---------|:------|
+| Set `SINT_API_KEY` | ✅ | Admin endpoint auth |
+| Set `SINT_STORE=postgres` | ✅ | Persistent evidence storage |
+| Set `SINT_CACHE=redis` | Recommended | Token cache + rate limiting |
+| Enable TLS termination | ✅ | Reverse proxy (nginx, Caddy, Cloudflare) |
+| Configure rate limits | Recommended | Default: 100 req/min/key |
+| Set token expiry policy | ✅ | Don't issue long-lived tokens |
+| Enable SIEM export | Recommended | Enterprise audit compliance |
+| Review geofence templates | If applicable | Physical safety zones |
+| Test circuit breaker | ✅ | Verify e-stop behavior before deployment |
+
+---
+
+## Security Contacts
+
+Report vulnerabilities to **team@sint.gg**. We follow responsible disclosure and aim to respond within 48 hours.

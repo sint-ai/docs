@@ -14,15 +14,25 @@
         "tab": "Documentation",
         "groups": [
           {
-            "group": "Overview",
+            "group": "Getting Started",
             "pages": [
               "introduction",
-              "whitepaper",
-              "security"
+              "getting-started",
+              "architecture"
             ]
           },
           {
-            "group": "Solutions & Tools",
+            "group": "SINT Protocol",
+            "pages": [
+              "whitepaper",
+              "gate",
+              "security",
+              "bridges",
+              "trust-registry"
+            ]
+          },
+          {
+            "group": "Integrations",
             "pages": [
               "mcp-marketplace",
               "sintbridge",
@@ -30,7 +40,23 @@
             ]
           },
           {
-            "group": "Extras",
+            "group": "Products",
+            "pages": [
+              "avatars",
+              "operators",
+              "outreach",
+              "cmo-operator"
+            ]
+          },
+          {
+            "group": "Developers",
+            "pages": [
+              "sdks",
+              "development"
+            ]
+          },
+          {
+            "group": "Resources",
             "pages": [
               "presskit"
             ]
@@ -81,8 +107,8 @@
     ],
     "primary": {
       "type": "button",
-      "label": "Start Now",
-      "href": "https://t.me/SintAI_bot"
+      "label": "Get Started",
+      "href": "/getting-started"
     }
   },
   "footer": {

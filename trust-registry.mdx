@@ -1,0 +1,463 @@
+---
+title: Open Agent Trust Registry
+description: Decentralized trust infrastructure for AI agents. Organizations register as credential issuers. Ed25519 threshold governance.
+sidebarTitle: Trust Registry
+---
+
+## Overview
+
+The Open Agent Trust Registry is a community-maintained registry of organizations authorized to issue credentials for AI agents. It provides a decentralized answer to the question: *"Can I trust that this agent is who it claims to be?"*
+
+The registry operates on three principles:
+
+1. **Open participation** — any organization can submit a registration PR
+2. **Threshold governance** — changes require multi-signature approval from existing issuers
+3. **Protocol integration** — registered issuers anchor into SINT Protocol capability tokens
+
+<CardGroup cols={2}>
+  <Card title="Community Fork" icon="github" href="https://github.com/pshkv/open-agent-trust-registry">
+    `github.com/pshkv/open-agent-trust-registry` — active development
+  </Card>
+  <Card title="Upstream Org" icon="building" href="https://github.com/sint-ai">
+    `github.com/sint-ai` — canonical source, SINT Protocol integration
+  </Card>
+</CardGroup>
+
+---
+
+## How It Works
+
+<Steps>
+
+<Step title="Issuer submits a registration">
+An organization generates an Ed25519 keypair and submits a JSON registration entry to the `data/` directory via pull request. The entry contains their public key, a canonical issuer ID, and metadata.
+</Step>
+
+<Step title="Existing issuers co-sign">
+The PR requires threshold signatures from a quorum of already-registered issuers. This prevents unilateral additions and ensures existing participants vouch for new entrants.
+</Step>
+
+<Step title="Entry is merged">
+Once threshold is met, the PR is merged. The issuer's public key is now trusted by all consumers of the registry.
+</Step>
+
+<Step title="Agents present credentials">
+When an agent connects to a system, it presents a credential signed by its issuer. The verifying party checks the issuer's public key against the registry.
+</Step>
+
+<Step title="SINT gateway enforces trust">
+The SINT Protocol gateway server resolves issuer trust at intercept time. Tokens from untrusted issuers are denied. The `/.well-known/agent-trust.json` endpoint serves the current registry state.
+</Step>
+
+</Steps>
+
+---
+
+## Registered Issuers
+
+8 issuers are currently registered in the trust registry.
+
+| # | Issuer ID | Status |
+|---|-----------|--------|
+| 1 | `agent-passport-system` | Active |
+| 2 | `agentid` | Active |
+| 3 | `agentinternetruntime` | Active |
+| 4 | `agora` | Active |
+| 5 | `arcede` | Active |
+| 6 | `arkforge` | Active |
+| 7 | `insumerapi` | Active |
+| 8 | `qntm` | Active |
+
+Query the live registry from a running gateway:
+
+```bash
+curl http://localhost:4100/.well-known/agent-trust.json
+```
+
+Response:
+
+```json
+{
+  "version": "1.0",
+  "updatedAt": "2024-01-01T00:00:00.000Z",
+  "issuers": [
+    {
+      "id": "agent-passport-system",
+      "publicKey": "ed25519:base64url_encoded_public_key",
+      "endpoint": "https://agentpassport.example.com",
+      "registeredAt": "2024-01-01T00:00:00.000Z",
+      "metadata": {
+        "name": "Agent Passport System",
+        "url": "https://agentpassport.example.com",
+        "contact": "security@agentpassport.example.com"
+      }
+    }
+    // ... 7 more
+  ],
+  "threshold": {
+    "required": 3,
+    "total": 8
+  },
+  "rootSignature": "ed25519:base64url_root_sig"
+}
+```
+
+---
+
+## Registry Structure
+
+```
+open-agent-trust-registry/
+├── data/
+│   ├── issuers/
+│   │   ├── agent-passport-system.json
+│   │   ├── agentid.json
+│   │   ├── agentinternetruntime.json
+│   │   ├── agora.json
+│   │   ├── arcede.json
+│   │   ├── arkforge.json
+│   │   ├── insumerapi.json
+│   │   └── qntm.json
+│   └── registry.json          # Aggregated registry with threshold signatures
+├── schemas/
+│   └── issuer.schema.json     # JSON Schema for issuer entries
+├── scripts/
+│   ├── register.ts            # Submit a new issuer registration
+│   ├── verify.ts              # Verify a registration or credential
+│   └── list.ts                # List all registered issuers
+└── .well-known/
+    └── agent-trust.json       # Served by gateway at /.well-known/agent-trust.json
+```
+
+### Issuer Entry Format
+
+Each issuer is stored as a JSON file in `data/issuers/`:
+
+```json
+{
+  "$schema": "../schemas/issuer.schema.json",
+  "id": "arkforge",
+  "publicKey": "ed25519:base64url_encoded_public_key",
+  "endpoint": "https://credentials.arkforge.io",
+  "registeredAt": "2024-01-01T00:00:00.000Z",
+  "metadata": {
+    "name": "Arkforge",
+    "url": "https://arkforge.io",
+    "contact": "trust@arkforge.io",
+    "description": "AI agent identity and credential issuance for enterprise workflows"
+  },
+  "signatures": [
+    {
+      "issuerId": "agentid",
+      "signature": "ed25519:base64url_signature",
+      "signedAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "issuerId": "agora",
+      "signature": "ed25519:base64url_signature",
+      "signedAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "issuerId": "qntm",
+      "signature": "ed25519:base64url_signature",
+      "signedAt": "2024-01-01T00:00:00.000Z"
+    }
+  ]
+}
+```
+
+---
+
+## CLI Tools
+
+The registry ships CLI scripts for issuer management.
+
+<CodeGroup>
+
+```bash List registered issuers
+# List all issuers
+npx ts-node scripts/list.ts
+
+# Output:
+# ID                      ENDPOINT                              REGISTERED
+# agent-passport-system   https://agentpassport.example.com    2024-01-01
+# agentid                 https://agentid.example.com          2024-01-02
+# ...
+
+# JSON output
+npx ts-node scripts/list.ts --format json
+```
+
+```bash Verify an issuer or credential
+# Verify an issuer entry is valid and signatures check out
+npx ts-node scripts/verify.ts --issuer arkforge
+
+# Verify a specific credential signed by an issuer
+npx ts-node scripts/verify.ts \
+  --credential ./agent-credential.json \
+  --issuer arkforge
+
+# Output on success:
+# ✓ Issuer arkforge found in registry
+# ✓ Public key matches registry entry
+# ✓ Credential signature valid
+# ✓ Credential not expired
+```
+
+```bash Register a new issuer
+# Generate keypair for your organization
+npx ts-node scripts/register.ts keygen --output ./my-keypair.json
+
+# Create a registration draft
+npx ts-node scripts/register.ts draft \
+  --id my-org \
+  --public-key ./my-keypair.json \
+  --endpoint https://credentials.my-org.com \
+  --name "My Org" \
+  --contact trust@my-org.com \
+  --output data/issuers/my-org.json
+
+# Submit as a pull request (opens GitHub PR)
+npx ts-node scripts/register.ts submit \
+  --file data/issuers/my-org.json
+```
+
+</CodeGroup>
+
+---
+
+## Governance: Ed25519 Threshold Signatures
+
+The registry uses Ed25519 threshold signatures to prevent any single party from adding or removing issuers unilaterally.
+
+### How Threshold Works
+
+<AccordionGroup>
+
+<Accordion title="Threshold parameters">
+
+The registry enforces a `required` / `total` threshold defined in `registry.json`. With 8 registered issuers and a threshold of 3:
+
+- Any new registration PR needs signatures from **at least 3** existing registered issuers
+- Any removal or modification of an existing entry needs the same quorum
+- The threshold itself can only be changed by a quorum of existing issuers
+
+</Accordion>
+
+<Accordion title="Signing a registration">
+
+Existing issuers sign new registration requests using their Ed25519 private key:
+
+```typescript
+import { sign } from '@noble/ed25519';
+import { readFileSync } from 'fs';
+
+const privateKeyHex = process.env.ISSUER_PRIVATE_KEY!;
+const draft = JSON.parse(readFileSync('./data/issuers/new-org.json', 'utf8'));
+
+// Sign the canonical form of the entry (sorted keys, no signatures field)
+const { signatures, ...payload } = draft;
+const message = JSON.stringify(payload, Object.keys(payload).sort());
+const messageBytes = new TextEncoder().encode(message);
+const privateKeyBytes = Buffer.from(privateKeyHex, 'hex');
+
+const signature = await sign(messageBytes, privateKeyBytes);
+const signatureBase64 = Buffer.from(signature).toString('base64url');
+
+console.log(`ed25519:${signatureBase64}`);
+// Paste this into the PR as a co-signer
+```
+
+</Accordion>
+
+<Accordion title="Verifying signatures">
+
+Any party can independently verify that a registry entry has valid threshold signatures:
+
+```typescript
+import { verify } from '@noble/ed25519';
+import registry from './data/registry.json';
+
+async function verifyIssuerEntry(issuerId: string): Promise<boolean> {
+  const entry = registry.issuers.find(i => i.id === issuerId);
+  if (!entry) return false;
+
+  const { signatures, ...payload } = entry;
+  const message = JSON.stringify(payload, Object.keys(payload).sort());
+  const messageBytes = new TextEncoder().encode(message);
+
+  let validSigs = 0;
+  for (const sig of entry.signatures) {
+    const cosigner = registry.issuers.find(i => i.id === sig.issuerId);
+    if (!cosigner) continue;
+
+    const pubKeyBytes = Buffer.from(
+      cosigner.publicKey.replace('ed25519:', ''),
+      'base64url'
+    );
+    const sigBytes = Buffer.from(
+      sig.signature.replace('ed25519:', ''),
+      'base64url'
+    );
+
+    const valid = await verify(sigBytes, messageBytes, pubKeyBytes);
+    if (valid) validSigs++;
+  }
+
+  return validSigs >= registry.threshold.required;
+}
+```
+
+</Accordion>
+
+</AccordionGroup>
+
+---
+
+## SINT Protocol Integration
+
+The trust registry integrates with SINT Protocol at two points:
+
+### 1. Capability Token Issuance
+
+When creating a capability token, you can bind it to a trust registry issuer. This means the token is only valid if the issuer is still in the registry at intercept time.
+
+```bash
+curl -X POST http://localhost:4100/v1/tokens \
+  -H "Content-Type: application/json" \
+  -d '{
+    "agentId": "agent:my-assistant:v1",
+    "resource": "payments:invoices",
+    "action": "read",
+    "issuerBinding": {
+      "issuerId": "agentid",
+      "agentCredential": "base64url_agent_credential_signed_by_issuer"
+    },
+    "tier": "standard",
+    "expiresIn": 3600
+  }'
+```
+
+The gateway verifies `agentCredential` against the issuer's public key in the registry before issuing the token.
+
+### 2. Discovery Endpoint
+
+The gateway serves the current registry state at a standard well-known path:
+
+```bash
+curl http://localhost:4100/.well-known/agent-trust.json
+```
+
+The gateway caches the registry and refreshes it on a configurable interval. Set the refresh interval in your environment:
+
+```bash
+SINT_TRUST_REGISTRY_URL=https://raw.githubusercontent.com/sint-ai/open-agent-trust-registry/main/data/registry.json
+SINT_TRUST_REGISTRY_TTL=3600  # seconds between refreshes
+```
+
+<Warning>
+  If the gateway cannot reach the registry URL at startup, it falls back to the last cached version. If no cache exists, tokens with `issuerBinding` will be denied. Ensure the registry URL is reachable from your deployment environment.
+</Warning>
+
+---
+
+## Registering as an Issuer
+
+<Steps>
+
+<Step title="Generate an Ed25519 keypair">
+
+```bash
+npx ts-node scripts/register.ts keygen --output ./my-keypair.json
+```
+
+Store the private key in a secrets manager. **Never commit it to git.**
+
+</Step>
+
+<Step title="Create your issuer entry">
+
+```bash
+npx ts-node scripts/register.ts draft \
+  --id your-org-id \
+  --public-key ./my-keypair.json \
+  --endpoint https://credentials.your-org.com \
+  --name "Your Organization" \
+  --contact trust@your-org.com \
+  --output data/issuers/your-org-id.json
+```
+
+The `id` field must be lowercase, alphanumeric, hyphens allowed, globally unique in the registry.
+
+</Step>
+
+<Step title="Open a pull request">
+
+Fork `github.com/pshkv/open-agent-trust-registry`, add your entry to `data/issuers/`, and open a PR. Include:
+- Your organization description
+- Use case for agent credential issuance  
+- Contact information for the trust team
+
+</Step>
+
+<Step title="Collect threshold signatures">
+
+Reach out to existing registered issuers (contact info in each issuer's metadata) to co-sign your registration. You need signatures from at least `threshold.required` issuers.
+
+Co-signers add their signature to the `signatures` array in your entry file and push to your PR branch.
+
+</Step>
+
+<Step title="Merge and deploy">
+
+Once the threshold is met, a registry maintainer merges the PR. Your issuer entry is now live. Update your deployment to reference the new registry URL.
+
+</Step>
+
+</Steps>
+
+<Info>
+  The governance process is intentionally manual. This is by design — automated additions would undermine the trust model. Plan for 3–7 business days for co-signer coordination.
+</Info>
+
+---
+
+## Security Considerations
+
+<AccordionGroup>
+
+<Accordion title="Key rotation">
+
+If your Ed25519 private key is compromised, file an emergency PR to update your public key. This PR must still meet the signature threshold — contact registry maintainers directly at `trust@sint.gg` for expedited review.
+
+After rotation, all credentials signed with the old key become invalid. Re-issue credentials to your agents using the new key.
+
+</Accordion>
+
+<Accordion title="Issuer revocation">
+
+An issuer can be removed from the registry via the same threshold governance process. Removal requires a quorum of co-signers to prevent a single bad actor from removing legitimate issuers.
+
+After removal:
+- The issuer's public key is moved to `data/revoked/`
+- The gateway serves the updated registry within one TTL cycle
+- All tokens with `issuerBinding` referencing the revoked issuer start returning `ISSUER_REVOKED` at intercept time
+
+</Accordion>
+
+<Accordion title="Registry supply chain">
+
+The registry is stored in a GitHub repository. Its security model depends on GitHub's access controls. Additional mitigations:
+
+- The `registry.json` root signature is verified independently of the repository contents
+- Pin a specific git commit hash in `SINT_TRUST_REGISTRY_URL` to prevent unauthorized updates from affecting your deployment
+- Consider hosting a mirror on infrastructure you control
+
+```bash
+# Pin to a specific commit
+SINT_TRUST_REGISTRY_URL=https://raw.githubusercontent.com/sint-ai/open-agent-trust-registry/abc123def456/data/registry.json
+```
+
+</Accordion>
+
+</AccordionGroup>

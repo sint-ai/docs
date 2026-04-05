@@ -1,0 +1,162 @@
+---
+title: "CMO Operator"
+description: "AI-powered content pipeline — one video becomes a week of content across 6 platforms for ~$1.50 in API costs."
+sidebarTitle: "CMO Operator"
+---
+
+The **SINT CMO Operator** is a self-hosted virtual Chief Marketing Officer that transforms a single video into a full week of multi-platform content — vertical clips with animated captions, LinkedIn posts, Twitter threads, Instagram carousels, SEO blog posts, and automated publishing.
+
+<Info>
+**Live instance:** [sint-cmo-operator-production.up.railway.app](https://sint-cmo-operator-production.up.railway.app)
+
+**Source:** [github.com/pshkv/sint-cmo-operator](https://github.com/pshkv/sint-cmo-operator)
+</Info>
+
+---
+
+## What It Produces
+
+From a single 45-minute video:
+
+| Output | Count | Platform |
+|:-------|:------|:---------|
+| Vertical clips with animated captions | 5–15 | TikTok, YouTube Shorts, Reels |
+| LinkedIn posts with pull quotes | 5 | LinkedIn |
+| Twitter threads | 3 | X/Twitter |
+| Instagram carousel slides | Multiple | Instagram |
+| SEO blog post | 1 (2,000+ words) | Blog/CMS |
+| Content calendar | 7-day schedule | All platforms |
+
+**Estimated cost:** ~$1.50 per video in API costs (Claude + AssemblyAI + ElevenLabs).
+
+---
+
+## Architecture
+
+### 6-Stage Pipeline
+
+<Steps>
+  <Step title="Download & Validate">
+    Fetch video from URL, validate format, extract metadata. Supports YouTube, direct URLs, and uploaded files.
+  </Step>
+  <Step title="Transcribe">
+    AssemblyAI processes audio with word-level timestamps and speaker diarization. Produces timestamped transcript with speaker labels.
+  </Step>
+  <Step title="Analyze">
+    Claude performs a 3-pass analysis:
+    - **Pass 1:** Topic segmentation — identify distinct content blocks
+    - **Pass 2:** Hook identification — find viral-worthy moments
+    - **Pass 3:** Scoring — rank segments by engagement potential
+  </Step>
+  <Step title="Face Track">
+    MediaPipe detects and tracks speaker faces. Smart 9:16 cropping centers on the active speaker for vertical video format.
+  </Step>
+  <Step title="Render">
+    Remotion + FFmpeg render final clips with:
+    - Animated TikTok-style captions (word-by-word highlight)
+    - Brand color overlay
+    - Speaker-centered framing
+    - Platform-optimized encoding
+  </Step>
+  <Step title="Generate Text Content">
+    Claude generates platform-specific written content:
+    - LinkedIn posts with pull quotes from transcript
+    - Twitter threads with key insights
+    - SEO-optimized blog post (2,000+ words)
+    - 7-day content calendar with scheduling
+  </Step>
+</Steps>
+
+After pipeline completion, content enters an **approval queue** before publishing to 6 platforms: YouTube Shorts, TikTok, Instagram, LinkedIn, X/Twitter, and Telegram.
+
+---
+
+## 18 Specialized Skills
+
+The operator uses a skill-based architecture where each capability is an independent, testable module:
+
+| Category | Skills | Description |
+|:---------|:-------|:------------|
+| **Ingestion** | `asset-ingester` | Download and validate source media |
+| **Analysis** | `content-analyzer`, `brand-researcher`, `competitor-analyzer` | Analyze content, brand context, and competition |
+| **Video** | `video-clipper`, `video-repurpose` | Smart clipping and format conversion |
+| **Writing** | `linkedin-writer`, `seo-blog`, `newsletter` | Platform-specific content generation |
+| **Visual** | `image-generator` | AI-generated images and thumbnails |
+| **SEO** | `seo-optimizer`, `serp-scraper` | Search optimization and SERP analysis |
+| **Distribution** | `content-publisher`, `platform-formatter`, `content-repurpose` | Multi-platform formatting and publishing |
+| **Planning** | `social-calendar`, `schema-generator` | Content calendar and structured data |
+| **Operations** | `output-packager`, `notifier` | Package deliverables and alert stakeholders |
+
+---
+
+## Tech Stack
+
+| Component | Technology |
+|:----------|:-----------|
+| Runtime | Node.js 22+, TypeScript |
+| API | Express.js with modular route handlers |
+| Video rendering | Remotion + FFmpeg |
+| Face tracking | MediaPipe |
+| Transcription | AssemblyAI |
+| AI generation | Claude (Anthropic) |
+| Auth | Custom auth middleware |
+| Deployment | Railway (production) |
+| Testing | Vitest |
+
+### Source Structure
+
+```
+src/
+├── api/          # 40+ route modules
+├── auth/         # Authentication middleware
+├── cli.ts        # CLI interface
+├── core/         # Core pipeline logic
+├── integrations/ # Third-party API clients
+├── orchestrator/ # Pipeline orchestration
+├── security/     # Security utilities
+├── services/     # Business logic services
+├── skills/       # 18 specialized skill modules
+└── ui/           # Admin dashboard
+```
+
+---
+
+## Quick Start
+
+```bash
+git clone https://github.com/pshkv/sint-cmo-operator.git
+cd sint-cmo-operator
+pnpm install
+cp .env.example .env  # Configure API keys
+pnpm dev
+```
+
+### Required Environment Variables
+
+| Variable | Service | Purpose |
+|:---------|:--------|:--------|
+| `ANTHROPIC_API_KEY` | Anthropic | Content analysis and generation |
+| `ASSEMBLYAI_API_KEY` | AssemblyAI | Transcription with timestamps |
+| `ELEVENLABS_API_KEY` | ElevenLabs | Voice generation (optional) |
+| `YOUTUBE_API_KEY` | Google | YouTube publishing |
+| `TWITTER_API_KEY` | X/Twitter | Tweet publishing |
+| `LINKEDIN_ACCESS_TOKEN` | LinkedIn | Post publishing |
+
+---
+
+## Integration with SINT Ecosystem
+
+The CMO Operator connects with other SINT components:
+
+- **SINT Outreach** — Generated content feeds into LinkedIn outreach campaigns
+- **SINT Avatars** — Video content can be presented through the 3D avatar system
+- **SINT Protocol** — Content publishing actions can be governed by capability tokens for enterprise compliance
+
+<CardGroup cols={2}>
+  <Card title="Source Code" icon="github" href="https://github.com/pshkv/sint-cmo-operator">
+    View the full source on GitHub
+  </Card>
+  <Card title="Live Instance" icon="globe" href="https://sint-cmo-operator-production.up.railway.app">
+    Try the production deployment
+  </Card>
+</CardGroup>

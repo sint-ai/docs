@@ -1,54 +1,110 @@
 ---
-title: "SINT ASI Bridge"
-description: "Empowering AI Innovation through Fetch.ai Partnership"
-sidebarTitle: "SINT ASI Bridge"
+title: "ASI Alliance Integration"
+description: "SINT's integration with the Artificial Superintelligence Alliance — connecting Fetch.ai uAgents, SingularityNET, and Ocean Protocol through SINT Bridge."
+sidebarTitle: "ASI Bridge"
 ---
 
-The SINT ASI Bridge represents a landmark collaboration between SINT and [Fetch.ai](http://Fetch.ai), a leading decentralized AI platform and key member of the Artificial Superintelligence Alliance (ASI). By integrating SINT’s interoperable ecosystem with [Fetch.ai](http://Fetch.ai)’s cutting-edge uAgents and Agentverse platform, this bridge enhances the capabilities of both platforms, delivering powerful AI-driven solutions for users and enterprises. This article explores the implementation, benefits, and transformative potential of the SINT ASI Bridge, with a focus on the strategic partnership with [Fetch.ai](http://Fetch.ai).
+## Overview
 
-## **What is the SINT ASI Bridge?**
+The **SINT ASI Bridge** connects SINT Protocol with the [Artificial Superintelligence Alliance](https://superintelligence.io/) (ASI) — a consortium of Fetch.ai, SingularityNET, and Ocean Protocol focused on decentralized AI infrastructure.
 
-The SINT ASI Bridge is a specialized interface that connects SINT’s platform with [Fetch.ai](http://Fetch.ai)’s decentralized AI technologies, enabling seamless collaboration between their respective AI agents. Built on the Model Context Protocol (MCP), it ensures consistent context management, allowing [Fetch.ai](http://Fetch.ai)’s uAgents to operate within SINT’s ecosystem. The bridge facilitates secure, delegated tasks across Web2 and Web3 environments, leveraging [Fetch.ai](http://Fetch.ai)’s Agentverse for agent discovery and execution.
+This integration enables Fetch.ai's [uAgents](https://github.com/fetchai/uAgents) to operate within SINT's governance framework, gaining access to the capability token system, policy gateway, and evidence ledger.
 
-[Fetch.ai](http://Fetch.ai), headquartered in Cambridge and led by CEO Humayun Sheikh, is renowned for its autonomous agents that perform tasks like trading, data analysis, and process automation on a blockchain-based network ([<u>Fetch.ai</u>](http://Fetch.ai)). As part of the ASI Alliance, alongside SingularityNET and Ocean Protocol, [Fetch.ai](http://Fetch.ai) contributes to a unified \$ASI token ecosystem, enhancing decentralized AI development ([<u>Artificial Superintelligence Alliance</u>](https://superintelligence.io/)).
+---
 
-## **How Was It Implemented?**
+## Architecture
 
-The SINT ASI Bridge was developed through a robust technical integration:
+The ASI Bridge extends SINT's A2A protocol bridge (`@sint/bridge-a2a`) with Fetch.ai-specific adapters:
 
-1. **MCP Client Customization**: SINT’s open-source MCP Client was adapted to support [Fetch.ai](http://Fetch.ai)’s uAgents, ensuring seamless context handling across platforms ([<u>MCP Specification</u>](https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization)).
-2. **MCP OAuth Layer**: Provides secure Web2 authentication, enabling uAgents to access resources like X accounts via OAuth 2.1, managed by Keycloak for enterprise-grade security.
-3. **Delegate Wallets Layer**: Facilitates Web3 interactions, allowing uAgents to manage crypto wallets or execute trades with transparency using [Fetch.ai](http://Fetch.ai)’s blockchain.
-4. **Agentverse Integration**: SINT’s platform connects to [Fetch.ai](http://Fetch.ai)’s Agentverse, a marketplace for agent creation and collaboration, enabling uAgents to perform tasks within SINT’s ecosystem ([<u>Agentverse</u>](https://agentverse.ai/)).
+```
+Fetch.ai uAgent → Agentverse → ASI Bridge → SINT Policy Gateway → Target System
+                                    ↕
+                              Evidence Ledger
+```
 
-The bridge leverages AWS Lambda for scalable execution and API Gateway for secure routing, supporting high user loads ([<u>AWS Community</u>](https://community.aws/)). [Fetch.ai](http://Fetch.ai)’s uAgents, built with the open-source uAgents framework, are deployed as Lambda functions, ensuring low-latency performance ([<u>uAgents GitHub</u>](https://github.com/fetchai/uAgents)).
+### Integration Points
 
-![Slide 16_9 - 147-2.jpg](/images/Slide16_9-147-2.jpg)
+| Component | SINT Side | Fetch.ai Side |
+|:----------|:----------|:--------------|
+| **Agent discovery** | `/.well-known/agent-trust.json` | Agentverse registry |
+| **Authentication** | Ed25519 capability tokens | uAgent identity |
+| **Context management** | MCP protocol | uAgent state |
+| **Governance** | Policy Gateway + 5-tier system | ASI Alliance governance |
+| **Execution** | SINT Bridge connectors | uAgent skills |
 
-## **Benefits for SINT**
+---
 
-The partnership with [Fetch.ai](http://Fetch.ai) significantly enhances SINT’s platform:
+## What uAgents Can Do Through SINT
 
-- **Advanced AI Agents**: SINT users gain access to [Fetch.ai](http://Fetch.ai)’s uAgents, capable of sophisticated tasks like predictive analytics and autonomous trading, powered by the ASI-1 Mini LLM, the world’s first Web3-native large language model ([<u>Fetch.ai</u>](http://Fetch.ai)[<u> Blog</u>](https://fetch.ai/blog/artificial-superintelligence-alliance-unveil-token-with-migration-d-app-tools-now-live)).
-- **Blockchain Security**: [Fetch.ai](http://Fetch.ai)’s blockchain ensures secure, transparent transactions, strengthening SINT’s Web3 offerings.
-- **Marketplace Synergy**: Integration with Agentverse expands SINT’s Agentic Marketplace, offering diverse agents for social media, finance, and robotics.
+With the ASI Bridge, Fetch.ai uAgents gain access to SINT's full capability stack:
 
-## **Benefits for **[**Fetch.ai**](http://Fetch.ai)
+<CardGroup cols={2}>
+  <Card title="Governed Web2 Access" icon="globe">
+    uAgents can access enterprise APIs (CRM, email, social media) with full audit logging and capability scoping.
+  </Card>
+  <Card title="Physical AI Control" icon="robot">
+    uAgents can control robots and drones through SINT's ROS2 and MAVLink bridges with safety enforcement.
+  </Card>
+  <Card title="Cross-Agent Coordination" icon="arrows-left-right">
+    uAgents coordinate with SINT-native agents via the A2A protocol, with delegated capability tokens.
+  </Card>
+  <Card title="Economic Integration" icon="coins">
+    $ASI token operations integrate with SINT's economy bridge for metered resource management.
+  </Card>
+</CardGroup>
 
-[Fetch.ai](http://Fetch.ai) reaps substantial advantages from the collaboration:
+---
 
-- **User Base Expansion**: SINT’s growing community provides [Fetch.ai](http://Fetch.ai) with new users for its uAgents, increasing adoption ([<u>Fetch.ai</u>](http://Fetch.ai)[<u> Innovation Lab</u>](https://innovationlab.fetch.ai/)).
-- **New Domains**: SINT’s robotics and enterprise focus enables [Fetch.ai](http://Fetch.ai)’s agents to explore applications in industrial automation and smart cities.
-- **Revenue Opportunities**: [Fetch.ai](http://Fetch.ai) can monetize uAgents through SINT’s marketplace via subscriptions or transaction fees, aligning with their revenue-sharing model.
+## Use Cases
 
-## **Use Cases**
+### Autonomous Trading with Safety Rails
 
-1. **Social Media Domination**: SINT users deploy [Fetch.ai](http://Fetch.ai)’s uAgents to manage X accounts, posting viral content and engaging followers based on real-time trends, boosting reach by up to 50% (SINT Use Cases).
-2. **Crypto Trading Automation**: uAgents analyze market data from Santiment ([<u>Santiment</u>](https://santiment.net/)) and execute trades on decentralized exchanges, achieving 20% higher returns than manual strategies.
-3. **Robotic Workflow Optimization**: In smart factories, uAgents control robotic systems via SINT’s platform, reducing downtime by 15% through predictive maintenance, leveraging [Fetch.ai](http://Fetch.ai)’s automation expertise.
+A Fetch.ai uAgent performs market analysis using data from [Santiment](https://santiment.net/) and executes trades on decentralized exchanges — all governed by SINT capability tokens that enforce position limits, portfolio constraints, and risk thresholds.
 
-![Slide 16_9 - 124-2.jpg](/images/Slide16_9-124-2.jpg)
+### Enterprise Data Pipeline
 
-## **Conclusion**
+uAgents access enterprise data sources through SINT Bridge connectors, with full audit trail. Each data access is logged to the evidence ledger with the requesting agent's identity and capability scope.
 
-The SINT ASI Bridge, powered by a strategic partnership with [Fetch.ai](http://Fetch.ai), is a transformative step towards a decentralized, AI-driven future. By integrating SINT’s interoperable platform with [Fetch.ai](http://Fetch.ai)’s uAgents and Agentverse, the bridge delivers innovative solutions across social media, finance, and robotics. This collaboration not only enhances SINT’s capabilities but also positions [Fetch.ai](http://Fetch.ai) as a leader in the ASI Alliance, driving mutual growth and unlocking new possibilities for users and developers worldwide.
+### Multi-Agent Factory Optimization
+
+uAgents from the Agentverse coordinate with SINT-governed robots on the factory floor. The Policy Gateway enforces safety tiers, geofences, and force limits while the A2A bridge handles inter-agent messaging.
+
+---
+
+## Getting Started
+
+<Steps>
+  <Step title="Register your uAgent">
+    Register your Fetch.ai uAgent with SINT's agent registry via the A2A bridge:
+    ```bash
+    curl -X POST http://localhost:4100/v1/a2a/agents \
+      -H "Content-Type: application/json" \
+      -d '{"url": "https://agentverse.ai/agents/your-agent", "name": "my-uagent"}'
+    ```
+  </Step>
+  <Step title="Issue capability tokens">
+    Create scoped capability tokens for the uAgent's required actions.
+  </Step>
+  <Step title="Route through SINT Bridge">
+    The uAgent's requests flow through SINT's policy gateway, gaining security and audit guarantees.
+  </Step>
+</Steps>
+
+---
+
+## ASI Alliance Partners
+
+| Partner | Role | Integration |
+|:--------|:-----|:------------|
+| **[Fetch.ai](https://fetch.ai)** | uAgent runtime, Agentverse | A2A bridge + agent discovery |
+| **[SingularityNET](https://singularitynet.io)** | AI marketplace, model hosting | MCP bridge for model access |
+| **[Ocean Protocol](https://oceanprotocol.com)** | Data marketplace | Economy bridge for data pricing |
+
+<CardGroup cols={2}>
+  <Card title="SINT Bridge" icon="bridge" href="/sintbridge">
+    Learn how SINT Bridge connects to external systems
+  </Card>
+  <Card title="Protocol Bridges" icon="puzzle-piece" href="/bridges">
+    Explore all 12 protocol bridge adapters
+  </Card>
+</CardGroup>

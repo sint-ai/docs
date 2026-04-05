@@ -1,0 +1,222 @@
+---
+title: "Protocol Bridges"
+description: "12 protocol bridges connecting SINT to robotics, industrial, and AI ecosystems."
+sidebarTitle: "Bridges"
+---
+
+SINT Protocol includes 12 bridge adapters that translate between the SINT capability token system and external protocols. Each bridge enforces the same security guarantees — capability verification, constraint checking, and evidence logging — regardless of the downstream protocol.
+
+---
+
+## Bridge Architecture
+
+Every bridge follows the same pattern:
+
+```
+Agent Request → Capability Token → Policy Gateway → Bridge Adapter → External Protocol
+                                                         ↕
+                                                   Evidence Ledger
+```
+
+Bridges are **not** passthrough proxies. They intercept every command, validate the agent's capability token, enforce physical constraints, and log the decision before forwarding to the target system.
+
+---
+
+## Available Bridges
+
+### Robotics & Physical AI
+
+<CardGroup cols={2}>
+  <Card title="ROS2 Bridge" icon="robot">
+    **Package:** `@sint/bridge-ros2`
+
+    Bridges SINT capability tokens to ROS2 (Robot Operating System 2). Wraps `cmd_vel`, joint commands, and sensor subscriptions with policy enforcement.
+
+    - Control loop latency: P50 < 1ms, P95 < 2ms (benchmarked)
+    - Supports `geometry_msgs/Twist`, `sensor_msgs/JointState`
+    - Topic-level capability scoping
+  </Card>
+  <Card title="MAVLink Bridge" icon="plane">
+    **Package:** `@sint/bridge-mavlink`
+
+    Connects SINT to drone and UAV systems via the MAVLink protocol. Enforces geofence constraints, altitude limits, and velocity caps.
+
+    - MAVLink v2 message framing
+    - GPS-based geofence enforcement
+    - Flight mode restriction via capability tokens
+  </Card>
+  <Card title="OpenRMF Bridge" icon="warehouse">
+    **Package:** `@sint/bridge-open-rmf`
+
+    Integration with Open-RMF (Robotics Middleware Framework) for multi-robot fleet management in facilities like hospitals, warehouses, and airports.
+
+    - Fleet dispatch governance
+    - Zone-based access control
+    - Task priority enforcement
+  </Card>
+  <Card title="HAL Engine" icon="microchip">
+    **Package:** `@sint/engine-hal`
+
+    Hardware Abstraction Layer for direct actuator control. Provides a unified interface across motor controllers, servos, and sensor arrays.
+
+    - Vendor-agnostic motor API
+    - Real-time constraint enforcement
+    - Sensor fusion support
+  </Card>
+</CardGroup>
+
+### Industrial Protocols
+
+<CardGroup cols={2}>
+  <Card title="gRPC Bridge" icon="server">
+    **Package:** `@sint/bridge-grpc`
+
+    Wraps gRPC service calls with capability token authentication. Supports unary, server-streaming, and bidirectional streaming RPCs.
+
+    - 176+ lines of protobuf-driven integration
+    - Interceptor-based token injection
+    - Streaming policy enforcement
+  </Card>
+  <Card title="MQTT/Sparkplug Bridge" icon="bolt">
+    **Package:** `@sint/bridge-mqtt-sparkplug`
+
+    Sparkplug B protocol adapter for SCADA and industrial IoT. Bridges SINT policy enforcement to MQTT-based control systems.
+
+    - Sparkplug B topic namespace compliance
+    - Device/node birth/death tracking
+    - Metric-level access control
+  </Card>
+  <Card title="OPC-UA Bridge" icon="industry">
+    **Package:** `@sint/bridge-opcua`
+
+    OPC Unified Architecture adapter for industrial automation. Connects SINT to PLCs, SCADA systems, and manufacturing execution systems.
+
+    - Node-level capability scoping
+    - Subscription-based monitoring with policy gating
+    - Historical data access governance
+  </Card>
+  <Card title="IoT Bridge" icon="wifi">
+    **Package:** `@sint/bridge-iot`
+
+    Generic IoT device bridge for constrained environments. Supports lightweight protocols and device shadow patterns.
+
+    - Device twin management
+    - Command-and-control with capability tokens
+    - Telemetry ingestion with policy filtering
+  </Card>
+</CardGroup>
+
+### AI & Agent Protocols
+
+<CardGroup cols={2}>
+  <Card title="MCP Bridge" icon="puzzle-piece">
+    **Package:** `@sint/bridge-mcp`
+
+    Model Context Protocol adapter. Allows MCP-compliant AI agents to interact with SINT-governed resources. Tool calls are intercepted and policy-checked before execution.
+
+    - MCP tool discovery with capability-scoped filtering
+    - Context preservation across tool calls
+    - Automatic evidence logging per tool invocation
+  </Card>
+  <Card title="A2A Bridge" icon="arrows-left-right">
+    **Package:** `@sint/bridge-a2a`
+
+    Agent-to-Agent protocol bridge (Google A2A). Enables secure inter-agent communication with capability token delegation.
+
+    - Agent card registration and discovery
+    - Message routing with capability verification
+    - Task delegation across agent boundaries
+  </Card>
+  <Card title="Economy Bridge" icon="coins">
+    **Package:** `@sint/bridge-economy`
+
+    Metered resource management. Tracks agent budgets, computes action costs, and enforces economic constraints.
+
+    - Per-agent balance tracking
+    - Cost quoting before execution
+    - Budget enforcement with overdraft prevention
+    - Event stream for billing integration
+  </Card>
+  <Card title="Swarm Bridge" icon="diagram-project">
+    **Package:** `@sint/bridge-swarm`
+
+    Multi-agent swarm coordination. Manages consensus, task allocation, and collective decision-making for agent groups.
+
+    - Swarm membership governance
+    - Consensus protocol with capability-weighted voting
+    - Task allocation with constraint propagation
+  </Card>
+</CardGroup>
+
+---
+
+## Cognitive Engines
+
+In addition to protocol bridges, SINT includes three cognitive engine packages:
+
+| Engine | Package | Purpose |
+|:-------|:--------|:--------|
+| **System 1** | `@sint/engine-system1` | Fast, reactive subsystem — handles real-time sensor responses and reflexive safety actions (sub-millisecond) |
+| **System 2** | `@sint/engine-system2` | Deliberative planning subsystem — handles complex multi-step reasoning and plan generation |
+| **Capsule Sandbox** | `@sint/engine-capsule-sandbox` | Isolated execution environment for untrusted agent code with syscall-level sandboxing |
+
+---
+
+## Adding a New Bridge
+
+All bridges implement the same interface pattern:
+
+```typescript
+import { PolicyGateway } from "@sint/gate-policy-gateway";
+import { LedgerWriter } from "@sint/gate-evidence-ledger";
+
+export function createBridge(
+  gateway: PolicyGateway,
+  ledger: LedgerWriter,
+  config: BridgeConfig
+) {
+  return {
+    async handleCommand(cmd: ExternalCommand) {
+      // 1. Map external command to SINT intercept request
+      const request = mapToIntercept(cmd);
+
+      // 2. Policy check (token validation, constraints, tier)
+      const decision = gateway.intercept(request);
+
+      // 3. Log to evidence ledger
+      ledger.append(decision);
+
+      // 4. If approved, forward to external system
+      if (decision.outcome === "approve") {
+        return forwardToProtocol(cmd, decision);
+      }
+
+      return { denied: true, reason: decision.reason };
+    },
+  };
+}
+```
+
+<Info>
+Every bridge follows this exact pattern: intercept → check → log → forward. There are no "lightweight" or "bypass" modes. The evidence ledger captures every decision.
+</Info>
+
+---
+
+## Gateway Server Endpoints
+
+The bridge system is exposed through the gateway server's unified API:
+
+| Bridge | Endpoint | Method |
+|:-------|:---------|:-------|
+| Core intercept | `/v1/intercept` | POST |
+| Batch intercept | `/v1/intercept/batch` | POST |
+| A2A messaging | `/v1/a2a` | POST |
+| A2A agent registry | `/v1/a2a/agents` | GET, POST |
+| Economy balance | `/v1/economy/balance/:agentId` | GET |
+| Economy budget | `/v1/economy/budget/:agentId` | GET |
+| Economy quote | `/v1/economy/quote` | POST |
+| Economy routing | `/v1/economy/route` | POST |
+| Risk stream | `/v1/risk/stream` | GET (SSE) |
+
+All bridge endpoints inherit the gateway's authentication, rate limiting, and evidence logging.

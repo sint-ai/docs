@@ -1,0 +1,524 @@
+---
+title: SINT Gate
+description: The SINT Policy Gateway — capability tokens, five-tier safety system, constraint enforcement, and evidence ledger.
+sidebarTitle: SINT Gate
+---
+
+## What is SINT Gate?
+
+SINT Gate is the **Security Wedge** — a mandatory policy enforcement layer between AI agents and physical actuators. It is the single entry point through which every physical action must pass. No token, no action.
+
+```typescript
+// @sint/gate-policy-gateway — core interface
+async function intercept(
+  token: SintCapabilityToken,
+  action: PhysicalAction,
+  context: PhysicalActionContext
+): Promise<InterceptResult>
+```
+
+`intercept()` is synchronous on the critical path. It returns one of three decisions:
+
+| Decision | Meaning | HTTP Status |
+|----------|---------|-------------|
+| `approve` | Action permitted within constraints | 200 |
+| `deny` | Action rejected — token invalid, constraint violated, or hijack detected | 403 |
+| `escalate` | Action queued for human approval (T2+ tiers) | 202 |
+
+<Warning>
+  Calling actuators without going through `intercept()` is a protocol violation. The gateway must be network-enforced — place it as the only authorized caller of downstream actuator APIs.
+</Warning>
+
+---
+
+## Capability Tokens
+
+Capability tokens are Ed25519-signed JSON structures that define exactly what an agent is authorized to do. They are the **only** mechanism for granting physical action rights.
+
+### Token Structure
+
+```typescript
+// @sint/core — packages/core/src/types.ts
+interface SintCapabilityToken {
+  // Identity
+  agentId: string;           // UUID of the requesting agent
+  issuerId: string;          // Public key (hex) of the issuing authority
+  
+  // Authorization scope
+  resource: string;          // e.g., "robot:arm:joint_1", "drone:motors", "valve:inlet"
+  action: string;            // e.g., "move", "actuate", "open", "close"
+  
+  // Physical constraints
+  constraints: PhysicalConstraints;
+  
+  // Safety classification
+  tier: 1 | 2 | 3 | 4 | 5;
+  
+  // Validity window
+  issuedAt: number;          // Unix ms
+  expiresAt: number;         // Unix ms (max 24h from issuedAt)
+  
+  // Delegation provenance
+  delegationChain: string[]; // Ordered list: root issuer → leaf issuer (max length 3)
+  
+  // Replay prevention
+  nonce: string;             // UUID v4, single-use
+  
+  // Cryptographic binding
+  signature: string;         // base64url(ed25519.sign(canonical_json, issuerPrivateKey))
+}
+
+interface PhysicalConstraints {
+  force_newtons?: number;        // Maximum force in Newtons
+  velocity_mps?: number;         // Maximum velocity in m/s
+  temperature_celsius?: number;  // Maximum temperature in °C
+  geofence?: GeoPolygon;         // WGS84 polygon boundary
+  joint_angles?: JointAngleLimits; // Per-joint min/max in degrees
+  custom?: Record<string, number>; // Domain-specific numeric limits
+}
+```
+
+### Issuing Tokens
+
+```bash
+# sintctl
+sintctl tokens issue \
+  --agent <agentId> \
+  --resource "robot:arm:joint_1" \
+  --action "move" \
+  --tier 3 \
+  --force 50 \
+  --velocity 0.3 \
+  --ttl 3600
+```
+
+```typescript
+// REST API
+const res = await fetch('https://gateway.example.com/v1/tokens', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer <admin_api_key>',
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    agentId: 'agent-uuid',
+    resource: 'robot:arm:joint_1',
+    action: 'move',
+    tier: 3,
+    constraints: { force_newtons: 50, velocity_mps: 0.3 },
+    ttlSeconds: 3600,
+  }),
+});
+const { token, tokenId } = await res.json();
+```
+
+### Delegation
+
+A token holder can delegate a **subset** of their permissions to another agent. The child token cannot exceed the parent's constraints on any dimension.
+
+```typescript
+// POST /v1/tokens/delegate
+{
+  parentTokenId: string;
+  delegateeAgentId: string;
+  constraints: PhysicalConstraints;  // Must be ≤ parent on all fields
+  tier: number;                      // Must be ≤ parent tier
+  ttlSeconds: number;                // Must be ≤ parent remaining TTL
+}
+```
+
+<Note>
+  Delegation is **attenuation-only**. The gateway enforces `Math.min(parent.constraint, child.constraint)` on all numeric fields at delegation time and re-verifies at intercept time. Max delegation depth: 3 hops from root issuer.
+</Note>
+
+---
+
+## Five-Tier Safety System
+
+Safety tiers define the operational envelope and oversight requirements for an agent. Tiers are **monotonically increasing** — a tier can be escalated during a session (e.g., human detected → force to T2) but never de-escalated.
+
+<AccordionGroup>
+  <Accordion title="T1 — Sandbox">
+    **Simulation only. No physical I/O permitted.**
+
+    - All actions execute against `@sint/engine-capsule-sandbox`
+    - Physical actuator calls are no-ops with simulated responses
+    - No approval queue, no evidence ledger entries (simulation events logged separately)
+    - Use for: development, integration testing, CI pipelines
+
+    ```typescript
+    // Token with tier: 1 will be routed to sandbox regardless of resource path
+    constraints: { /* any values — sandbox enforces none physically */ }
+    ```
+  </Accordion>
+  <Accordion title="T2 — Guarded">
+    **Human-in-the-loop required. Hard velocity cap.**
+
+    - Every action requires explicit human approval before execution
+    - Approval delivered via SSE stream or WebSocket (`GET /v1/approvals/stream`)
+    - Hard constraint: `velocity_mps < 0.5` — gateway rejects tokens exceeding this at T2
+    - Timeout: if no human response within configurable window (default 30s), action is denied
+    - Use for: new agent onboarding, unfamiliar environments, proximity to humans
+
+    <Warning>
+      T2 approval latency adds to the action execution time. Design control loops accordingly — do not use T2 for time-critical actuations.
+    </Warning>
+  </Accordion>
+  <Accordion title="T3 — Supervised">
+    **Alert-based oversight. Force cap enforced.**
+
+    - Actions execute immediately, but every action generates a supervisor alert
+    - Hard constraint: `force_newtons < 50` — gateway rejects tokens exceeding this at T3
+    - CSML anomaly score above 0.6 → automatic escalation to T2 (human approval required)
+    - Supervisor dashboard receives real-time feed via `GET /v1/risk/stream`
+    - Use for: validated agents in known environments with supervisor available
+
+    ```typescript
+    // CSML threshold configuration (gateway-server config)
+    csml: {
+      t3_alert_threshold: 0.6,    // Score that generates alert
+      t3_escalate_threshold: 0.85, // Score that forces T2 escalation
+    }
+    ```
+  </Accordion>
+  <Accordion title="T4 — Autonomous">
+    **Full autonomy. Complete audit trail required.**
+
+    - Actions execute without human approval
+    - Every action, with full context and CSML scores, logged to evidence ledger
+    - No hard constraint caps beyond token-specified limits
+    - Goal hijack detection runs on every payload
+    - Circuit breaker active — CSML score > 0.95 auto-trips
+    - Use for: validated agents with extensive operational history in controlled environments
+  </Accordion>
+  <Accordion title="T5 — Unsupervised">
+    **Classified clearance required. Military/space applications.**
+
+    - Highest autonomy level. Governance structure is operator-defined.
+    - Requires classified issuer credential in the trust registry
+    - Evidence ledger entries are encrypted at rest with operator-controlled keys
+    - Not available via standard token issuance API — requires out-of-band provisioning
+    - Use for: military robotics, deep space autonomous systems, classified industrial applications
+  </Accordion>
+</AccordionGroup>
+
+### Tier Escalation
+
+Physical context can force tier escalation. The gateway evaluates `PhysicalActionContext` on every intercept call:
+
+```typescript
+interface PhysicalActionContext {
+  human_detected: boolean;       // From proximity sensor / vision system
+  human_distance_meters?: number;
+  environment: 'indoor' | 'outdoor' | 'unknown';
+  ambient_temperature_celsius?: number;
+  // ... domain-specific fields
+}
+```
+
+| Trigger | Escalation |
+|---------|-----------|
+| `human_detected: true` AND tier < 2 | Force T2 |
+| `human_distance_meters < 1.0` AND tier < 3 | Force T3 |
+| CSML anomaly score > threshold | Force T2 |
+
+---
+
+## Policy Evaluation Pipeline
+
+```
+intercept(token, action, context)
+  │
+  ├─► 1. Schema Validation      — Zod, rejects malformed input
+  ├─► 2. Token Verification     — Ed25519 sig, expiry, nonce, revocation
+  ├─► 3. Policy Evaluation      — Active rules for resource+action
+  ├─► 4. Constraint Check       — PhysicalActionContext vs token limits
+  ├─► 5. Tier Assignment        — Token tier + context escalation
+  ├─► 6. Goal Hijack Detection  — 25+ regex patterns on action payload
+  ├─► 7. CSML Anomaly Scoring   — Behavioral anomaly score
+  └─► 8. Evidence Logging       — SHA-256 chain entry
+```
+
+All 8 steps are synchronous. Step 8 is non-blocking (fire-and-forget write to ledger queue) to minimize latency on approved actions.
+
+---
+
+## Constraint System
+
+The `PhysicalActionContext` is the runtime representation of what the agent is actually requesting. It is compared against the token's `PhysicalConstraints`:
+
+```typescript
+// Enforcement in @sint/gate-policy-gateway
+function enforceConstraints(
+  requested: PhysicalActionContext,
+  allowed: PhysicalConstraints
+): ConstraintResult {
+  if (requested.force_newtons > (allowed.force_newtons ?? Infinity)) {
+    return { violated: true, field: 'force_newtons', 
+             requested: requested.force_newtons, 
+             allowed: allowed.force_newtons };
+  }
+  // ... same pattern for velocity, temperature, joint angles
+  
+  if (allowed.geofence && !pointInPolygon(requested.position, allowed.geofence)) {
+    return { violated: true, field: 'geofence', ... };
+  }
+  
+  return { violated: false };
+}
+```
+
+For delegated tokens, `Math.min()` is applied at delegation creation time:
+
+```typescript
+// @sint/gate-capability-tokens — delegation validation
+const childConstraints: PhysicalConstraints = {
+  force_newtons: Math.min(parent.constraints.force_newtons ?? Infinity, 
+                          requested.force_newtons ?? Infinity),
+  velocity_mps:  Math.min(parent.constraints.velocity_mps ?? Infinity,
+                          requested.velocity_mps ?? Infinity),
+  // ...
+};
+```
+
+---
+
+## Evidence Ledger
+
+The evidence ledger is an **append-only SHA-256 hash chain** — every record references the hash of the previous record, making tampering detectable.
+
+```typescript
+// @sint/gate-evidence-ledger — LedgerEntry
+interface LedgerEntry {
+  id: string;              // UUID v4
+  previousHash: string;    // SHA-256 of previous entry (genesis: "0".repeat(64))
+  entryHash: string;       // SHA-256(previousHash + payload)
+  
+  payload: {
+    decision: 'approve' | 'deny' | 'escalate';
+    agentId: string;
+    tokenId: string;
+    tokenHash: string;     // SHA-256 of serialized token
+    action: string;
+    resource: string;
+    tier: number;
+    constraints: PhysicalConstraints;
+    csmlScore: number;
+    hijackDetected: boolean;
+    timestamp: number;     // Unix ms
+  };
+}
+```
+
+### Proof Receipts
+
+Callers can request a proof receipt for any ledger entry:
+
+```typescript
+// GET /v1/ledger/proof/:entryId
+{
+  entryId: string;
+  entryHash: string;
+  merkleProof: string[];   // Path to chain root
+  chainRoot: string;       // Current chain tip hash
+  verifiable: boolean;
+}
+```
+
+### Chain Verification
+
+```bash
+sintctl ledger verify --from-genesis
+# ✓ Chain intact: 12,847 entries, root: a3f9c2...
+# ✗ Tampering detected at entry 8,432: hash mismatch
+```
+
+### SIEM Export
+
+```bash
+# Export as newline-delimited JSON for Splunk/Datadog/ELK
+sintctl ledger export --format ndjson --since 24h > ledger-export.ndjson
+# GET /v1/ledger/export?format=ndjson&since=86400
+```
+
+---
+
+## Approval Queue
+
+For T2 tokens (and T3 escalations), actions are held in an approval queue until a human operator acts.
+
+<Tabs>
+  <Tab title="SSE Stream">
+    ```typescript
+    // Client: subscribe to real-time approval requests
+    const stream = new EventSource('/v1/approvals/stream', {
+      headers: { Authorization: 'Bearer <api_key>' }
+    });
+    
+    stream.onmessage = (event) => {
+      const approval: PendingApproval = JSON.parse(event.data);
+      // { id, agentId, action, resource, constraints, tier, requestedAt }
+    };
+    ```
+  </Tab>
+  <Tab title="WebSocket">
+    ```typescript
+    // Bidirectional: receive requests + send decisions
+    const ws = new WebSocket('wss://gateway.example.com/v1/risk/stream');
+    ws.send(JSON.stringify({
+      type: 'subscribe',
+      topics: ['approvals', 'anomalies'],
+    }));
+    
+    ws.onmessage = (event) => {
+      const msg = JSON.parse(event.data);
+      if (msg.type === 'approval_request') {
+        // Handle in dashboard UI
+      }
+    };
+    ```
+  </Tab>
+  <Tab title="REST">
+    ```bash
+    # List pending approvals
+    GET /v1/approvals?status=pending
+    
+    # Approve
+    POST /v1/approvals/:id/approve
+    { "operatorId": "human-uuid", "note": "Verified safe" }
+    
+    # Deny
+    POST /v1/approvals/:id/deny
+    { "operatorId": "human-uuid", "reason": "Out of safe zone" }
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## API Reference
+
+All endpoints require TLS in production. Base path: `/v1`.
+
+<AccordionGroup>
+  <Accordion title="Health — /health">
+    | Method | Path | Description |
+    |--------|------|-------------|
+    | `GET` | `/health` | Liveness check. Returns 200 if process is alive. |
+    | `GET` | `/health/ready` | Readiness check. Returns 200 if DB + Redis connected. |
+    | `GET` | `/health/live` | Kubernetes-style liveness probe. |
+  </Accordion>
+  <Accordion title="Intercept — /v1/intercept">
+    | Method | Path | Description |
+    |--------|------|-------------|
+    | `POST` | `/v1/intercept` | Submit action for policy evaluation. Returns `InterceptResult`. |
+  </Accordion>
+  <Accordion title="Tokens — /v1/tokens">
+    | Method | Path | Description |
+    |--------|------|-------------|
+    | `POST` | `/v1/tokens` | Issue a new capability token. |
+    | `GET` | `/v1/tokens` | List tokens (filterable by agentId, resource, tier). |
+    | `GET` | `/v1/tokens/:id` | Fetch a specific token by ID. |
+    | `POST` | `/v1/tokens/delegate` | Create a delegated (attenuated) child token. |
+    | `DELETE` | `/v1/tokens/:id` | Revoke a token immediately. |
+  </Accordion>
+  <Accordion title="Ledger — /v1/ledger">
+    | Method | Path | Description |
+    |--------|------|-------------|
+    | `GET` | `/v1/ledger` | List ledger entries (paginated, filterable). |
+    | `GET` | `/v1/ledger/:id` | Fetch a specific ledger entry. |
+    | `GET` | `/v1/ledger/proof/:id` | Get Merkle proof receipt for an entry. |
+    | `POST` | `/v1/ledger/verify` | Verify chain integrity from genesis or a given entry. |
+    | `GET` | `/v1/ledger/export` | Export entries as NDJSON for SIEM ingestion. |
+  </Accordion>
+  <Accordion title="Approvals — /v1/approvals">
+    | Method | Path | Description |
+    |--------|------|-------------|
+    | `GET` | `/v1/approvals` | List approval requests (filter: pending/approved/denied). |
+    | `GET` | `/v1/approvals/:id` | Fetch a specific approval request. |
+    | `POST` | `/v1/approvals/:id/approve` | Approve a pending action. |
+    | `POST` | `/v1/approvals/:id/deny` | Deny a pending action. |
+    | `GET` | `/v1/approvals/stream` | SSE stream of real-time approval requests. |
+  </Accordion>
+  <Accordion title="Discovery — /v1/discovery">
+    | Method | Path | Description |
+    |--------|------|-------------|
+    | `GET` | `/v1/discovery/agents` | List registered agents. |
+    | `GET` | `/v1/discovery/agents/:id` | Get agent details and public key. |
+    | `POST` | `/v1/discovery/agents/register` | Register a new agent with public key. |
+    | `DELETE` | `/v1/discovery/agents/:id` | Deregister an agent. |
+  </Accordion>
+  <Accordion title="Economy — /v1/economy">
+    | Method | Path | Description |
+    |--------|------|-------------|
+    | `GET` | `/v1/economy/balance` | Get agent's resource credit balance. |
+    | `POST` | `/v1/economy/charge` | Charge credits for a completed action. |
+    | `GET` | `/v1/economy/transactions` | List transaction history. |
+  </Accordion>
+  <Accordion title="Agent-to-Agent — /v1/a2a">
+    | Method | Path | Description |
+    |--------|------|-------------|
+    | `POST` | `/v1/a2a/delegate` | Create cross-agent delegation (A2A protocol). |
+    | `GET` | `/v1/a2a/trust-chain/:id` | Resolve full trust chain for an agent. |
+    | `POST` | `/v1/a2a/revoke` | Revoke an A2A delegation. |
+  </Accordion>
+  <Accordion title="Risk Stream — /v1/risk">
+    | Method | Path | Description |
+    |--------|------|-------------|
+    | `GET` | `/v1/risk/stream` | WebSocket: real-time CSML scores, anomaly events, circuit breaker state. |
+    | `GET` | `/v1/risk/snapshot` | Current risk snapshot: all active agents, scores, tier distribution. |
+  </Accordion>
+  <Accordion title="Dashboard — /v1/dashboard">
+    | Method | Path | Description |
+    |--------|------|-------------|
+    | `GET` | `/v1/dashboard/stats` | Aggregate stats: intercept counts, approval rates, anomaly rates. |
+    | `GET` | `/v1/dashboard/agents` | Agent overview with current tier and last action. |
+    | `GET` | `/v1/dashboard/alerts` | Active alerts from CSML and goal hijack detection. |
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Circuit Breaker
+
+The circuit breaker implements **invariant I-G2**: when tripped, the gateway denies **all** intercept requests regardless of token validity, tier, or approval status.
+
+<Warning>
+  The e-stop is a hard invariant. There is no way to approve an action while the circuit breaker is tripped. Reset requires an authorized operator action via `sintctl`.
+</Warning>
+
+### Trip Conditions
+
+| Trigger | Source | Action |
+|---------|--------|--------|
+| CSML anomaly score > 0.95 | Automatic | Trip + alert all operators |
+| Goal hijack detected (critical pattern) | Automatic | Trip + alert all operators |
+| Manual e-stop | Operator via `sintctl estop trip` | Trip + log operator identity |
+| Watchdog timeout | Automatic (no heartbeat in N seconds) | Trip + alert |
+
+### State Machine
+
+```
+CLOSED (normal operation)
+  │
+  ├──► [trip condition] ──► OPEN (all actions denied)
+  │                              │
+  │                              ├──► [manual reset + operator auth] ──► HALF-OPEN
+  │                                        │
+  │                                        ├──► [test action passes] ──► CLOSED
+  │                                        └──► [test action fails]  ──► OPEN
+```
+
+### Reset
+
+```bash
+# Requires operator credentials (API key with estop:reset scope)
+sintctl estop reset --reason "False positive: sensor malfunction confirmed"
+
+# REST
+POST /v1/intercept  # No dedicated estop endpoint — managed via sintctl or dashboard
+```
+
+<Tip>
+  Monitor circuit breaker state via the WebSocket risk stream (`/v1/risk/stream`). The `circuit_breaker` event fires on every state transition.
+</Tip>

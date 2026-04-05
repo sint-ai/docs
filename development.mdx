@@ -1,111 +1,274 @@
 ---
-title: "Development"
-description: "Preview changes locally to update your docs"
+title: "Development Guide"
+description: "Set up your local development environment, run tests, and contribute to SINT Protocol."
+sidebarTitle: "Development"
 ---
 
-<Info>
-  **Prerequisite**: Please install Node.js (version 19 or higher) before proceeding. \
-  
-  Please upgrade to `docs.json` before proceeding and delete the legacy `mint.json` file.
-</Info>
+## Prerequisites
 
-Follow these steps to install and run Mintlify on your operating system:
+| Tool | Version | Purpose |
+|:-----|:--------|:--------|
+| **Node.js** | 20+ | Runtime |
+| **pnpm** | 9+ | Package manager (monorepo workspaces) |
+| **Git** | 2.40+ | Version control |
+| **Docker** | 24+ | Optional: PostgreSQL + Redis for persistence |
 
-**Step 1**: Install Mintlify:
+---
 
-<CodeGroup>
+## Local Setup
 
-```bash npm
-npm i -g mintlify
-```
-
-
-```bash yarn
-yarn global add mintlify
-```
-
-</CodeGroup>
-
-**Step 2**: Navigate to the docs directory (where the `docs.json` file is located) and execute the following command:
-
-```bash
-mintlify dev
-```
-
-A local preview of your documentation will be available at `http://localhost:3000`.
-
-### Custom Ports
-
-By default, Mintlify uses port 3000. You can customize the port Mintlify runs on by using the `--port` flag. To run Mintlify on port 3333, for instance, use this command:
-
-```bash
-mintlify dev --port 3333
-```
-
-If you attempt to run Mintlify on a port that's already in use, it will use the next available port:
-
-```md
-Port 3000 is already in use. Trying 3001 instead.
-```
-
-## Mintlify Versions
-
-Please note that each CLI release is associated with a specific version of Mintlify. If your local website doesn't align with the production version, please update the CLI:
-
-<CodeGroup>
-
-```bash npm
-npm i -g mintlify@latest
-```
-
-
-```bash yarn
-yarn global upgrade mintlify
-```
-
-</CodeGroup>
-
-## Validating Links
-
-The CLI can assist with validating reference links made in your documentation. To identify any broken links, use the following command:
-
-```bash
-mintlify broken-links
-```
-
-## Deployment
+<Steps>
+  <Step title="Clone the Repository">
+    ```bash
+    git clone https://github.com/sint-ai/sint-protocol.git
+    cd sint-protocol
+    ```
+  </Step>
+  <Step title="Install Dependencies">
+    ```bash
+    pnpm install
+    ```
+    This installs dependencies for all 35 workspace projects (24 packages + 5 apps + 6 examples/tools).
+  </Step>
+  <Step title="Build Everything">
+    ```bash
+    pnpm build
+    ```
+    Uses Turborepo to build 34 tasks in parallel with dependency-aware ordering.
+  </Step>
+  <Step title="Run Tests">
+    ```bash
+    pnpm test
+    ```
+    Runs 1,363 tests across the entire monorepo. All tests should pass on a clean build.
+  </Step>
+  <Step title="Start the Gateway Server">
+    ```bash
+    cd apps/gateway-server
+    pnpm dev
+    ```
+    Gateway starts on `http://localhost:4100` by default.
+  </Step>
+</Steps>
 
 <Tip>
-  Unlimited editors available under the [Pro
-  Plan](https://mintlify.com/pricing) and above.
+Turborepo caches build outputs. Subsequent builds only recompile changed packages. Use `pnpm build --force` to bypass the cache.
 </Tip>
 
-If the deployment is successful, you should see the following:
+---
 
-<Frame>
-  <img
-    src="/images/checks-passed.png"
-    style={{ borderRadius:"0.5rem" }}
-  />
-</Frame>
+## Monorepo Structure
 
-## Code Formatting
+```
+sint-protocol/
+├── packages/          # 24 publishable packages
+│   ├── core/          # @sint/core — types, schemas, constants
+│   ├── capability-tokens/  # @sint/gate-capability-tokens
+│   ├── policy-gateway/     # @sint/gate-policy-gateway
+│   ├── evidence-ledger/    # @sint/gate-evidence-ledger
+│   ├── persistence/        # @sint/persistence
+│   ├── persistence-postgres/ # @sint/persistence-postgres
+│   ├── client/             # @sint/client (TypeScript SDK)
+│   ├── bridge-ros2/        # @sint/bridge-ros2
+│   ├── bridge-mcp/         # @sint/bridge-mcp
+│   ├── bridge-grpc/        # @sint/bridge-grpc
+│   ├── bridge-a2a/         # @sint/bridge-a2a
+│   ├── bridge-economy/     # @sint/bridge-economy
+│   ├── bridge-mqtt-sparkplug/
+│   ├── bridge-opcua/
+│   ├── bridge-iot/
+│   ├── bridge-mavlink/
+│   ├── bridge-open-rmf/
+│   ├── bridge-swarm/
+│   ├── engine-hal/         # Hardware abstraction layer
+│   ├── engine-system1/     # Fast reactive subsystem
+│   ├── engine-system2/     # Deliberative planning subsystem
+│   ├── engine-capsule-sandbox/
+│   ├── avatar/             # CSML escalation for avatars
+│   └── conformance-tests/  # Compliance test suite
+├── apps/
+│   ├── gateway-server/     # Hono HTTP server
+│   ├── dashboard/          # Admin dashboard (React)
+│   ├── sintctl/            # CLI tool
+│   ├── sint-mcp/           # MCP bridge server
+│   └── sint-mcp-scanner/   # MCP discovery tool
+├── sdks/
+│   ├── python/             # Python SDK (1,962 lines)
+│   └── go/                 # Go SDK
+├── examples/
+│   └── notes-server/       # Example MCP server
+├── docs/
+│   └── whitepaper-v2.md    # Technical whitepaper
+├── turbo.json              # Turborepo config
+├── pnpm-workspace.yaml     # Workspace definition
+└── package.json            # Root config + pnpm overrides
+```
 
-We suggest using extensions on your IDE to recognize and format MDX. If you're a VSCode user, consider the [MDX VSCode extension](https://marketplace.visualstudio.com/items?itemName=unifiedjs.vscode-mdx) for syntax highlighting, and [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) for code formatting.
+---
 
-## Troubleshooting
+## Running Specific Packages
 
-<AccordionGroup>
-  <Accordion title='Error: Could not load the "sharp" module using the darwin-arm64 runtime'>
-    This may be due to an outdated version of node. Try the following:
+### Build a single package
 
-    1. Remove the currently-installed version of mintlify: `npm remove -g mintlify`
-    2. Upgrade to Node v19 or higher.
-    3. Reinstall mintlify: `npm install -g mintlify`
-  </Accordion>
-  <Accordion title="Issue: Encountering an unknown error">
-    Solution: Go to the root of your device and delete the ~/.mintlify folder. Afterwards, run `mintlify dev` again.
-  </Accordion>
-</AccordionGroup>
+```bash
+pnpm --filter @sint/core build
+```
 
-Curious about what changed in the CLI version? [Check out the CLI changelog.](https://www.npmjs.com/package/mintlify?activeTab=versions)
+### Test a single package
+
+```bash
+pnpm --filter @sint/gate-capability-tokens test
+```
+
+### Run the conformance test suite
+
+```bash
+cd packages/conformance-tests
+pnpm test
+```
+
+The conformance suite includes 114 tests covering:
+- ROS2 control loop latency (P50/P95/P99 assertions)
+- Token lifecycle validation
+- Gateway policy evaluation
+- Evidence ledger integrity
+- Bridge protocol compliance
+
+---
+
+## Environment Variables
+
+### Gateway Server
+
+| Variable | Default | Description |
+|:---------|:--------|:------------|
+| `PORT` | `4100` | HTTP server port |
+| `SINT_API_KEY` | _(none)_ | Admin endpoint authentication. **Required in production.** |
+| `SINT_STORE` | `memory` | Evidence store: `memory`, `postgres` |
+| `SINT_CACHE` | `memory` | Token cache: `memory`, `redis` |
+| `SINT_STRICT_BENCH` | `false` | Enforce strict latency thresholds in conformance tests |
+| `DATABASE_URL` | _(none)_ | PostgreSQL connection string (when `SINT_STORE=postgres`) |
+| `REDIS_URL` | _(none)_ | Redis connection string (when `SINT_CACHE=redis`) |
+
+### Docker Development
+
+```bash
+# Start PostgreSQL + Redis for persistence testing
+docker compose up -d
+
+# Run gateway with persistent storage
+SINT_STORE=postgres SINT_CACHE=redis pnpm dev
+```
+
+---
+
+## Testing
+
+### Test Hierarchy
+
+| Suite | Package | Tests | Focus |
+|:------|:--------|:------|:------|
+| Unit | `@sint/gate-capability-tokens` | Ed25519 crypto, delegation | Cryptographic correctness |
+| Unit | `@sint/gate-policy-gateway` | Intercept pipeline | Policy enforcement |
+| Unit | `@sint/gate-evidence-ledger` | Hash chain, proof receipts | Audit integrity |
+| Unit | `@sint/client` | 12 tests | SDK API surface |
+| Integration | `conformance-tests` | 114 tests | End-to-end protocol compliance |
+| Performance | `conformance-tests` | ROS2 latency benchmark | P50 < 10ms, P95 < 15ms |
+
+### Running tests with coverage
+
+```bash
+pnpm test -- --coverage
+```
+
+### Strict performance mode
+
+```bash
+SINT_STRICT_BENCH=true pnpm --filter @sint/conformance-tests test
+```
+
+In strict mode, P95 latency must stay under 10ms (default non-strict threshold is 15ms to accommodate CI load).
+
+---
+
+## CI/CD
+
+The repository uses GitHub Actions for continuous integration:
+
+- **Build:** Turborepo parallel build of all 34 tasks
+- **Test:** Full test suite (1,363 tests)
+- **Audit:** `pnpm audit` for dependency vulnerabilities
+- **Lint:** TypeScript strict mode across all packages
+
+<Warning>
+Always run `pnpm build && pnpm test` locally before pushing. The CI pipeline catches the same issues but takes longer.
+</Warning>
+
+---
+
+## Contributing
+
+<Steps>
+  <Step title="Fork the Repository">
+    Fork `sint-ai/sint-protocol` on GitHub.
+  </Step>
+  <Step title="Create a Feature Branch">
+    ```bash
+    git checkout -b feat/your-feature-name
+    ```
+  </Step>
+  <Step title="Make Your Changes">
+    Follow the existing code style. TypeScript strict mode is enforced. Add tests for new functionality.
+  </Step>
+  <Step title="Build and Test">
+    ```bash
+    pnpm build && pnpm test
+    ```
+    All 34 build tasks must succeed. All 1,363+ tests must pass.
+  </Step>
+  <Step title="Submit a Pull Request">
+    Open a PR against `sint-ai/sint-protocol:main`. Include a clear description of changes and any relevant issue numbers.
+  </Step>
+</Steps>
+
+### Code Style
+
+- TypeScript strict mode (`strict: true` in `tsconfig.json`)
+- ES modules (`"type": "module"` in all packages)
+- Vitest for testing
+- Zod for runtime validation
+- No `any` types in production code
+
+### Package Naming Convention
+
+| Pattern | Example | Description |
+|:--------|:--------|:------------|
+| `@sint/core` | Core types | Foundation types and schemas |
+| `@sint/gate-*` | `@sint/gate-capability-tokens` | Security gate components |
+| `@sint/bridge-*` | `@sint/bridge-ros2` | Protocol bridge adapters |
+| `@sint/engine-*` | `@sint/engine-hal` | Runtime engine components |
+| `@sint/persistence-*` | `@sint/persistence-postgres` | Storage adapters |
+
+---
+
+## Useful Commands
+
+```bash
+# List all workspace packages
+pnpm list --depth 0 -r
+
+# Check for dependency vulnerabilities
+pnpm audit
+
+# Update all dependencies
+pnpm update --recursive
+
+# Generate a keypair (gateway must be running)
+curl -X POST http://localhost:4100/v1/keypair
+
+# Check gateway health
+curl http://localhost:4100/v1/health
+
+# View OpenAPI spec
+curl http://localhost:4100/v1/openapi.json
+```

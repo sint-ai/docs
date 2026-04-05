@@ -1,0 +1,657 @@
+---
+title: SDK Reference
+description: Client libraries for interacting with the SINT Protocol gateway. Available in TypeScript, Python, and Go.
+sidebarTitle: SDKs
+---
+
+## Overview
+
+All SDKs wrap the SINT Protocol [REST API](/api-reference) and connect to a running gateway server instance. They handle token serialization, request signing, and HTTP transport.
+
+<CardGroup cols={3}>
+  <Card title="TypeScript" icon="js" href="#typescript-sdk">
+    `@sint/client` — Node.js and browser. 12 tests.
+  </Card>
+  <Card title="Python" icon="python" href="#python-sdk">
+    `sint-client` — Async-first via httpx. 1,962 lines.
+  </Card>
+  <Card title="Go" icon="golang" href="#go-sdk">
+    `sintclient` — Idiomatic Go with context support.
+  </Card>
+</CardGroup>
+
+---
+
+## TypeScript SDK
+
+**Package:** `@sint/client`  
+**Source:** `sdks/typescript/` in the [sint-protocol](https://github.com/sint-ai/sint-protocol) monorepo  
+**Tests:** 12 tests in `__tests__/client.test.ts`
+
+### Installation
+
+```bash
+npm install @sint/client
+# or
+pnpm add @sint/client
+# or
+yarn add @sint/client
+```
+
+### Initialization
+
+```typescript
+import { SintClient } from '@sint/client';
+
+const client = new SintClient({
+  gatewayUrl: 'http://localhost:4100',  // Required
+  apiKey: process.env.SINT_API_KEY,     // Required for token creation
+  timeout: 5000,                         // Optional, default 5000ms
+  retries: 3,                            // Optional, default 3
+});
+```
+
+### Methods
+
+<AccordionGroup>
+
+<Accordion title="createToken(params)">
+
+Creates a signed capability token authorizing an agent to perform an action.
+
+```typescript
+const token = await client.createToken({
+  agentId: 'agent:my-assistant:v1',       // Required
+  resource: 'payments:invoices',           // Required, format: namespace:name
+  action: 'read',                          // Required: 'read' | 'write' | 'execute' | 'delete'
+  constraints: {                           // Optional, enforced at intercept time
+    maxAmount: 1000,
+    currency: 'USD',
+    allowedRegions: ['US', 'CA'],
+  },
+  tier: 'standard',                        // Optional: 'standard' | 'elevated' | 'restricted'
+  expiresIn: 3600,                         // Optional, seconds, default 3600
+  metadata: {                              // Optional, arbitrary key-value pairs
+    issuer: 'my-app',
+    environment: 'production',
+  },
+});
+
+// Returns:
+// {
+//   token: 'sint_cap_01HXYZ...',
+//   tokenId: 'tok_01HXYZ...',
+//   agentId: 'agent:my-assistant:v1',
+//   resource: 'payments:invoices',
+//   action: 'read',
+//   constraints: { maxAmount: 1000, ... },
+//   tier: 'standard',
+//   issuedAt: Date,
+//   expiresAt: Date,
+//   signature: 'base64url_signature',
+// }
+```
+
+</Accordion>
+
+<Accordion title="intercept(params)">
+
+Validates a token and records the request in the ledger. Call this before executing any privileged action.
+
+```typescript
+const result = await client.intercept({
+  token: 'sint_cap_01HXYZ...',           // Required, the capability token string
+  resource: 'payments:invoices',          // Required, must match token resource
+  action: 'read',                         // Required, must match token action
+  context: {                              // Optional, stored in ledger
+    requestId: 'req_01HXYZ...',
+    agentRuntime: 'openai-gpt-4',
+    sessionId: 'sess_01HXYZ...',
+  },
+});
+
+if (!result.allowed) {
+  // Handle denial — do NOT execute the action
+  throw new Error(`Access denied: ${result.reason}`);
+  // reason: 'TOKEN_EXPIRED' | 'TOKEN_REVOKED' | 'CONSTRAINT_VIOLATION' |
+  //         'RESOURCE_MISMATCH' | 'ACTION_MISMATCH' | 'INVALID_SIGNATURE'
+}
+
+// result.evidenceId — reference for audit trail
+// result.ledgerEntry — full ledger record
+```
+
+</Accordion>
+
+<Accordion title="delegateToken(params)">
+
+Creates a child token from a parent token. The child token's permissions must be equal to or more restrictive than the parent.
+
+```typescript
+const delegated = await client.delegateToken({
+  parentToken: 'sint_cap_01HXYZ...',     // Required, the parent capability token
+  agentId: 'agent:sub-assistant:v1',     // Required, the receiving agent
+  constraints: {                          // Must be subset of parent constraints
+    maxAmount: 100,
+    currency: 'USD',
+  },
+  expiresIn: 900,                         // Must not exceed parent expiry
+  metadata: {
+    delegatedBy: 'agent:my-assistant:v1',
+  },
+});
+```
+
+<Note>
+  Revoking the parent token automatically invalidates all delegated child tokens.
+</Note>
+
+</Accordion>
+
+<Accordion title="revokeToken(tokenId)">
+
+Revokes a token immediately. Any subsequent `intercept()` call with this token returns `allowed: false`.
+
+```typescript
+await client.revokeToken('tok_01HXYZ...');
+
+// Also revoke by token string
+await client.revokeToken({ token: 'sint_cap_01HXYZ...' });
+```
+
+</Accordion>
+
+<Accordion title="queryLedger(params)">
+
+Retrieves ledger entries. All parameters are optional filters.
+
+```typescript
+const entries = await client.queryLedger({
+  agentId: 'agent:my-assistant:v1',    // Filter by agent
+  tokenId: 'tok_01HXYZ...',            // Filter by token
+  resource: 'payments:invoices',        // Filter by resource
+  action: 'read',                       // Filter by action
+  result: 'allowed',                    // Filter: 'allowed' | 'denied'
+  since: new Date('2024-01-01'),        // Start timestamp
+  until: new Date('2024-01-31'),        // End timestamp
+  limit: 100,                           // Default 50, max 1000
+  offset: 0,
+});
+
+// entries.entries: LedgerEntry[]
+// entries.total: number
+// entries.limit: number
+// entries.offset: number
+```
+
+</Accordion>
+
+<Accordion title="generateProof(params)">
+
+Generates a cryptographic proof that a specific action was allowed at a point in time. Useful for compliance audits.
+
+```typescript
+const proof = await client.generateProof({
+  evidenceId: 'ev_01HXYZ...',
+});
+
+// Returns a signed proof object containing:
+// - The original ledger entry
+// - A Merkle proof for tamper-evidence
+// - The gateway's signature
+// Serialize with JSON.stringify(proof) for storage or transmission
+```
+
+</Accordion>
+
+</AccordionGroup>
+
+### Error Handling
+
+```typescript
+import { SintClient, SintError, SintAuthError, SintTokenError } from '@sint/client';
+
+const client = new SintClient({ gatewayUrl: 'http://localhost:4100', apiKey: '...' });
+
+try {
+  const result = await client.intercept({ token, resource, action });
+} catch (err) {
+  if (err instanceof SintAuthError) {
+    // 401 — invalid or missing API key
+  } else if (err instanceof SintTokenError) {
+    // Token parsing or validation failure
+  } else if (err instanceof SintError) {
+    // Other gateway error
+    console.error(err.code, err.message, err.statusCode);
+  }
+}
+```
+
+---
+
+## Python SDK
+
+**Source:** `sdks/python/` in the [sint-protocol](https://github.com/sint-ai/sint-protocol) repo  
+**Size:** ~1,962 lines  
+**Runtime:** Python 3.9+  
+**Transport:** [httpx](https://www.python-httpx.org/) (async and sync)
+
+### Installation
+
+```bash
+pip install sint-client
+# or with uv
+uv add sint-client
+```
+
+### Classes
+
+**`SintClient`** — Primary client for gateway operations.  
+**`SintToken`** — Token model with validation and serialization methods.  
+**`PolicyGateway`** — Higher-level interface for policy enforcement patterns.
+
+### Initialization
+
+<Tabs>
+  <Tab title="Async">
+
+```python
+import asyncio
+from sint import SintClient
+
+async def main():
+    async with SintClient(
+        gateway_url="http://localhost:4100",
+        api_key=os.environ["SINT_API_KEY"],
+        timeout=5.0,
+    ) as client:
+        token = await client.create_token(
+            agent_id="agent:my-assistant:v1",
+            resource="payments:invoices",
+            action="read",
+        )
+        print(token.token)
+
+asyncio.run(main())
+```
+
+  </Tab>
+  <Tab title="Sync">
+
+```python
+from sint import SintClient
+
+client = SintClient(
+    gateway_url="http://localhost:4100",
+    api_key=os.environ["SINT_API_KEY"],
+)
+
+token = client.create_token_sync(
+    agent_id="agent:my-assistant:v1",
+    resource="payments:invoices",
+    action="read",
+)
+print(token.token)
+```
+
+  </Tab>
+</Tabs>
+
+### Core Operations
+
+<CodeGroup>
+
+```python Create and intercept
+import asyncio
+import os
+from sint import SintClient
+from sint.exceptions import SintTokenDeniedError
+
+async def main():
+    async with SintClient(
+        gateway_url="http://localhost:4100",
+        api_key=os.environ["SINT_API_KEY"],
+    ) as client:
+
+        # Create a capability token
+        token = await client.create_token(
+            agent_id="agent:my-assistant:v1",
+            resource="payments:invoices",
+            action="read",
+            constraints={
+                "max_amount": 1000,
+                "currency": "USD",
+            },
+            tier="standard",
+            expires_in=3600,
+        )
+
+        # Intercept (validate + log) before executing
+        try:
+            result = await client.intercept(
+                token=token.token,
+                resource="payments:invoices",
+                action="read",
+                context={"request_id": "req_01HXYZ..."},
+            )
+        except SintTokenDeniedError as e:
+            print(f"Access denied: {e.reason}")
+            return
+
+        # Proceed with the actual operation
+        print(f"Allowed. Evidence ID: {result.evidence_id}")
+
+asyncio.run(main())
+```
+
+```python PolicyGateway pattern
+import os
+from sint import PolicyGateway
+
+# PolicyGateway wraps SintClient with middleware-style enforcement
+gateway = PolicyGateway(
+    gateway_url="http://localhost:4100",
+    api_key=os.environ["SINT_API_KEY"],
+)
+
+# Decorator pattern — function only runs if intercept passes
+@gateway.enforce(resource="payments:invoices", action="read")
+async def read_invoice(invoice_id: str, *, sint_token: str) -> dict:
+    # This function only executes if the token is valid
+    return {"invoice_id": invoice_id, "amount": 500}
+
+# Call with token — gateway validates before invoking
+result = await read_invoice("inv_001", sint_token="sint_cap_01HXYZ...")
+```
+
+```python Ledger queries
+import asyncio
+import os
+from sint import SintClient
+from datetime import datetime, timedelta
+
+async def main():
+    async with SintClient(
+        gateway_url="http://localhost:4100",
+        api_key=os.environ["SINT_API_KEY"],
+    ) as client:
+
+        entries = await client.query_ledger(
+            agent_id="agent:my-assistant:v1",
+            since=datetime.utcnow() - timedelta(hours=24),
+            result_filter="denied",
+            limit=100,
+        )
+
+        for entry in entries.entries:
+            print(f"{entry.timestamp} {entry.resource} {entry.action}: {entry.result}")
+
+        # Generate a compliance proof
+        if entries.entries:
+            proof = await client.generate_proof(
+                evidence_id=entries.entries[0].evidence_id
+            )
+            print(f"Proof generated: {proof.signature[:20]}...")
+
+asyncio.run(main())
+```
+
+```python Token delegation
+import asyncio
+import os
+from sint import SintClient
+
+async def main():
+    async with SintClient(
+        gateway_url="http://localhost:4100",
+        api_key=os.environ["SINT_API_KEY"],
+    ) as client:
+
+        parent = await client.create_token(
+            agent_id="agent:orchestrator:v1",
+            resource="data:records",
+            action="read",
+            constraints={"max_records": 10000},
+            expires_in=3600,
+        )
+
+        # Delegate restricted access to a subagent
+        child = await client.delegate_token(
+            parent_token=parent.token,
+            agent_id="agent:worker:v1",
+            constraints={"max_records": 100},  # More restrictive
+            expires_in=600,  # Shorter TTL
+        )
+
+        print(f"Child token: {child.token}")
+        print(f"Expires: {child.expires_at}")
+
+asyncio.run(main())
+```
+
+</CodeGroup>
+
+### Type Reference
+
+```python
+from sint.types import (
+    CapabilityToken,    # token, token_id, agent_id, resource, action, constraints, ...
+    InterceptResult,    # allowed, reason, evidence_id, ledger_entry
+    LedgerEntry,        # id, token_id, agent_id, resource, action, timestamp, result
+    LedgerPage,         # entries, total, limit, offset
+    CryptoProof,        # evidence_id, ledger_entry, merkle_proof, signature
+)
+```
+
+---
+
+## Go SDK
+
+**Source:** `sdks/go/` in the [sint-protocol](https://github.com/sint-ai/sint-protocol) repo  
+**Package:** `sintclient`  
+**Go version:** 1.21+
+
+### Installation
+
+```bash
+go get github.com/sint-ai/sint-protocol/sdks/go
+```
+
+### Initialization
+
+```go
+package main
+
+import (
+    "context"
+    "log"
+    "os"
+
+    "github.com/sint-ai/sint-protocol/sdks/go/sintclient"
+)
+
+func main() {
+    client, err := sintclient.NewClient(sintclient.Config{
+        GatewayURL: "http://localhost:4100",
+        APIKey:     os.Getenv("SINT_API_KEY"),
+        Timeout:    5 * time.Second,
+    })
+    if err != nil {
+        log.Fatalf("failed to create client: %v", err)
+    }
+    defer client.Close()
+}
+```
+
+### Core Operations
+
+<CodeGroup>
+
+```go Create a token
+ctx := context.Background()
+
+token, err := client.CreateToken(ctx, sintclient.CreateTokenParams{
+    AgentID:  "agent:my-assistant:v1",
+    Resource: "payments:invoices",
+    Action:   sintclient.ActionRead,
+    Constraints: map[string]interface{}{
+        "maxAmount": 1000,
+        "currency":  "USD",
+    },
+    Tier:      sintclient.TierStandard,
+    ExpiresIn: 3600,
+})
+if err != nil {
+    log.Fatalf("create token: %v", err)
+}
+
+log.Printf("Token: %s", token.Token)
+log.Printf("Expires: %s", token.ExpiresAt.Format(time.RFC3339))
+```
+
+```go Intercept a request
+ctx := context.Background()
+
+result, err := client.Intercept(ctx, sintclient.InterceptParams{
+    Token:    "sint_cap_01HXYZ...",
+    Resource: "payments:invoices",
+    Action:   sintclient.ActionRead,
+    Context: map[string]string{
+        "requestId": "req_01HXYZ...",
+        "caller":    "myapp",
+    },
+})
+if err != nil {
+    log.Fatalf("intercept error: %v", err)
+}
+
+if !result.Allowed {
+    log.Printf("Access denied: %s", result.Reason)
+    return
+}
+
+log.Printf("Allowed. Evidence: %s", result.EvidenceID)
+```
+
+```go Query the ledger
+ctx := context.Background()
+
+page, err := client.QueryLedger(ctx, sintclient.LedgerQueryParams{
+    AgentID: "agent:my-assistant:v1",
+    Limit:   100,
+    Offset:  0,
+})
+if err != nil {
+    log.Fatalf("query ledger: %v", err)
+}
+
+log.Printf("Total entries: %d", page.Total)
+for _, entry := range page.Entries {
+    log.Printf("%s %s %s → %s",
+        entry.Timestamp.Format(time.RFC3339),
+        entry.Action,
+        entry.Resource,
+        entry.Result,
+    )
+}
+```
+
+```go Full workflow
+package main
+
+import (
+    "context"
+    "log"
+    "os"
+    "time"
+
+    "github.com/sint-ai/sint-protocol/sdks/go/sintclient"
+)
+
+func main() {
+    client, err := sintclient.NewClient(sintclient.Config{
+        GatewayURL: "http://localhost:4100",
+        APIKey:     os.Getenv("SINT_API_KEY"),
+        Timeout:    5 * time.Second,
+    })
+    if err != nil {
+        log.Fatalf("init client: %v", err)
+    }
+    defer client.Close()
+
+    ctx := context.Background()
+
+    // 1. Issue token
+    token, err := client.CreateToken(ctx, sintclient.CreateTokenParams{
+        AgentID:   "agent:go-worker:v1",
+        Resource:  "storage:blobs",
+        Action:    sintclient.ActionWrite,
+        ExpiresIn: 1800,
+    })
+    if err != nil {
+        log.Fatalf("create token: %v", err)
+    }
+
+    // 2. Validate before use
+    result, err := client.Intercept(ctx, sintclient.InterceptParams{
+        Token:    token.Token,
+        Resource: "storage:blobs",
+        Action:   sintclient.ActionWrite,
+    })
+    if err != nil {
+        log.Fatalf("intercept: %v", err)
+    }
+
+    if !result.Allowed {
+        log.Fatalf("denied: %s", result.Reason)
+    }
+
+    log.Printf("Proceeding with write. Evidence: %s", result.EvidenceID)
+}
+```
+
+</CodeGroup>
+
+### Constants
+
+```go
+// Actions
+sintclient.ActionRead    = "read"
+sintclient.ActionWrite   = "write"
+sintclient.ActionExecute = "execute"
+sintclient.ActionDelete  = "delete"
+
+// Tiers
+sintclient.TierStandard   = "standard"
+sintclient.TierElevated   = "elevated"
+sintclient.TierRestricted = "restricted"
+
+// Denial reasons
+sintclient.ReasonTokenExpired       = "TOKEN_EXPIRED"
+sintclient.ReasonTokenRevoked       = "TOKEN_REVOKED"
+sintclient.ReasonConstraintViolation = "CONSTRAINT_VIOLATION"
+sintclient.ReasonResourceMismatch   = "RESOURCE_MISMATCH"
+sintclient.ReasonActionMismatch     = "ACTION_MISMATCH"
+sintclient.ReasonInvalidSignature   = "INVALID_SIGNATURE"
+```
+
+---
+
+## SDK Feature Comparison
+
+| Feature | TypeScript | Python | Go |
+|---------|------------|--------|----|
+| `createToken` | ✅ | ✅ | ✅ |
+| `intercept` | ✅ | ✅ | ✅ |
+| `delegateToken` | ✅ | ✅ | — |
+| `revokeToken` | ✅ | ✅ | — |
+| `queryLedger` | ✅ | ✅ | ✅ |
+| `generateProof` | ✅ | ✅ | — |
+| Async support | ✅ | ✅ | ✅ (context) |
+| Retry logic | ✅ | ✅ | — |
+| Type safety | Full | Full (hints) | Full |
+| Browser support | ✅ | ❌ | ❌ |
+
+<Info>
+  Go SDK is currently in active development. `delegateToken`, `revokeToken`, and `generateProof` are planned for the next release. Track progress in [GitHub Issues](https://github.com/sint-ai/sint-protocol/issues).
+</Info>

@@ -1,0 +1,550 @@
+---
+title: Getting Started
+description: Set up and run the SINT Protocol gateway server locally. Issue your first capability token in under 10 minutes.
+sidebarTitle: Getting Started
+---
+
+## Prerequisites
+
+| Requirement | Version |
+|-------------|---------|
+| Node.js | 20+ |
+| pnpm | 9+ |
+| Git | any recent |
+
+<Tip>
+  Verify your environment before cloning: `node --version && pnpm --version`
+</Tip>
+
+## Quickstart
+
+<Steps>
+
+<Step title="Clone the repository">
+
+```bash
+git clone https://github.com/sint-ai/sint-protocol.git
+cd sint-protocol
+```
+
+</Step>
+
+<Step title="Install dependencies">
+
+```bash
+pnpm install
+```
+
+This installs all workspace dependencies across the monorepo using pnpm workspaces.
+
+</Step>
+
+<Step title="Build">
+
+```bash
+pnpm build
+```
+
+Uses [Turborepo](https://turbo.build/) for parallel builds across the monorepo. Executes **34 build tasks** with dependency-aware caching. Subsequent builds are significantly faster due to Turborepo's local cache.
+
+<Note>
+  First build takes ~60–90 seconds. Cached rebuilds complete in under 5 seconds.
+</Note>
+
+</Step>
+
+<Step title="Run tests">
+
+```bash
+pnpm test
+```
+
+Runs the full test suite: **1,363 tests** across all packages. All tests must pass before proceeding. To run tests for a specific package:
+
+```bash
+pnpm --filter @sint/gateway-server test
+```
+
+</Step>
+
+<Step title="Start the gateway server">
+
+```bash
+cd apps/gateway-server
+pnpm dev
+```
+
+The gateway starts on `http://localhost:4100`. You should see:
+
+```
+SINT Gateway Server listening on port 4100
+```
+
+</Step>
+
+<Step title="Verify the gateway is running">
+
+```bash
+curl http://localhost:4100/v1/health
+```
+
+Expected response:
+
+```json
+{
+  "status": "ok",
+  "version": "0.1.0",
+  "timestamp": "2024-01-01T00:00:00.000Z"
+}
+```
+
+</Step>
+
+<Step title="Generate a keypair">
+
+The gateway uses Ed25519 keypairs for signing capability tokens. Generate one:
+
+```bash
+curl -X POST http://localhost:4100/v1/keypair
+```
+
+Response:
+
+```json
+{
+  "publicKey": "ed25519:base64url_encoded_public_key",
+  "privateKey": "ed25519:base64url_encoded_private_key",
+  "keyId": "key_01HXYZ..."
+}
+```
+
+<Warning>
+  Store the `privateKey` securely. It cannot be recovered from the gateway. In production, set it via the `SINT_API_KEY` environment variable and do not expose it in API responses.
+</Warning>
+
+</Step>
+
+<Step title="Create a capability token">
+
+A capability token authorizes an agent to perform a specific action on a resource.
+
+```bash
+curl -X POST http://localhost:4100/v1/tokens \
+  -H "Content-Type: application/json" \
+  -d '{
+    "agentId": "agent:my-assistant:v1",
+    "resource": "payments:invoices",
+    "action": "read",
+    "constraints": {
+      "maxAmount": 1000,
+      "currency": "USD",
+      "allowedRegions": ["US", "CA"]
+    },
+    "tier": "standard",
+    "expiresIn": 3600
+  }'
+```
+
+Response:
+
+```json
+{
+  "token": "sint_cap_01HXYZ...",
+  "tokenId": "tok_01HXYZ...",
+  "agentId": "agent:my-assistant:v1",
+  "resource": "payments:invoices",
+  "action": "read",
+  "constraints": {
+    "maxAmount": 1000,
+    "currency": "USD",
+    "allowedRegions": ["US", "CA"]
+  },
+  "tier": "standard",
+  "issuedAt": "2024-01-01T00:00:00.000Z",
+  "expiresAt": "2024-01-01T01:00:00.000Z",
+  "signature": "base64url_signature"
+}
+```
+
+**Token fields:**
+
+| Field | Description |
+|-------|-------------|
+| `agentId` | Unique identifier for the agent receiving the capability |
+| `resource` | The resource being accessed, in `namespace:name` format |
+| `action` | Permitted action: `read`, `write`, `execute`, `delete` |
+| `constraints` | Arbitrary JSON object enforcing usage limits |
+| `tier` | Policy tier: `standard`, `elevated`, or `restricted` |
+| `expiresIn` | Token TTL in seconds |
+
+</Step>
+
+<Step title="Intercept a request">
+
+Before an agent executes an action, the gateway validates its token and records the request in the ledger.
+
+```bash
+curl -X POST http://localhost:4100/v1/intercept \
+  -H "Content-Type: application/json" \
+  -d '{
+    "token": "sint_cap_01HXYZ...",
+    "resource": "payments:invoices",
+    "action": "read",
+    "context": {
+      "requestId": "req_01HXYZ...",
+      "agentRuntime": "openai-gpt-4",
+      "callerIp": "127.0.0.1"
+    }
+  }'
+```
+
+Response on success:
+
+```json
+{
+  "allowed": true,
+  "evidenceId": "ev_01HXYZ...",
+  "ledgerEntry": {
+    "id": "le_01HXYZ...",
+    "tokenId": "tok_01HXYZ...",
+    "agentId": "agent:my-assistant:v1",
+    "resource": "payments:invoices",
+    "action": "read",
+    "timestamp": "2024-01-01T00:00:00.000Z",
+    "result": "allowed"
+  }
+}
+```
+
+Response on denial (expired token, constraint violation, etc.):
+
+```json
+{
+  "allowed": false,
+  "reason": "TOKEN_EXPIRED",
+  "evidenceId": "ev_01HXYZ..."
+}
+```
+
+</Step>
+
+<Step title="Query the evidence ledger">
+
+Every intercepted request is recorded in the tamper-evident ledger.
+
+```bash
+# Get all ledger entries
+curl http://localhost:4100/v1/ledger
+
+# Filter by agent
+curl "http://localhost:4100/v1/ledger?agentId=agent:my-assistant:v1"
+
+# Filter by token
+curl "http://localhost:4100/v1/ledger?tokenId=tok_01HXYZ..."
+
+# Paginate
+curl "http://localhost:4100/v1/ledger?limit=50&offset=0"
+```
+
+Response:
+
+```json
+{
+  "entries": [
+    {
+      "id": "le_01HXYZ...",
+      "tokenId": "tok_01HXYZ...",
+      "agentId": "agent:my-assistant:v1",
+      "resource": "payments:invoices",
+      "action": "read",
+      "timestamp": "2024-01-01T00:00:00.000Z",
+      "result": "allowed",
+      "evidenceId": "ev_01HXYZ...",
+      "hash": "sha256:abc123..."
+    }
+  ],
+  "total": 1,
+  "limit": 50,
+  "offset": 0
+}
+```
+
+</Step>
+
+</Steps>
+
+---
+
+## TypeScript SDK
+
+Install the client library:
+
+```bash
+npm install @sint/client
+# or
+pnpm add @sint/client
+```
+
+<CodeGroup>
+
+```typescript Create a token
+import { SintClient } from '@sint/client';
+
+const client = new SintClient({
+  gatewayUrl: 'http://localhost:4100',
+  apiKey: process.env.SINT_API_KEY,
+});
+
+const token = await client.createToken({
+  agentId: 'agent:my-assistant:v1',
+  resource: 'payments:invoices',
+  action: 'read',
+  constraints: {
+    maxAmount: 1000,
+    currency: 'USD',
+  },
+  tier: 'standard',
+  expiresIn: 3600,
+});
+
+console.log(token.token); // sint_cap_01HXYZ...
+```
+
+```typescript Intercept a request
+import { SintClient } from '@sint/client';
+
+const client = new SintClient({
+  gatewayUrl: 'http://localhost:4100',
+  apiKey: process.env.SINT_API_KEY,
+});
+
+const result = await client.intercept({
+  token: 'sint_cap_01HXYZ...',
+  resource: 'payments:invoices',
+  action: 'read',
+  context: {
+    requestId: 'req_01HXYZ...',
+  },
+});
+
+if (!result.allowed) {
+  throw new Error(`Access denied: ${result.reason}`);
+}
+```
+
+```typescript Delegate a token
+import { SintClient } from '@sint/client';
+
+const client = new SintClient({
+  gatewayUrl: 'http://localhost:4100',
+  apiKey: process.env.SINT_API_KEY,
+});
+
+// Delegate a subset of permissions to a child agent
+const delegated = await client.delegateToken({
+  parentToken: 'sint_cap_01HXYZ...',
+  agentId: 'agent:sub-assistant:v1',
+  constraints: {
+    // Must be equal to or more restrictive than parent
+    maxAmount: 100,
+    currency: 'USD',
+  },
+  expiresIn: 900,
+});
+```
+
+```typescript Query the ledger
+import { SintClient } from '@sint/client';
+
+const client = new SintClient({
+  gatewayUrl: 'http://localhost:4100',
+  apiKey: process.env.SINT_API_KEY,
+});
+
+const entries = await client.queryLedger({
+  agentId: 'agent:my-assistant:v1',
+  limit: 100,
+  offset: 0,
+});
+
+for (const entry of entries.entries) {
+  console.log(`${entry.timestamp} ${entry.action} ${entry.resource} → ${entry.result}`);
+}
+```
+
+</CodeGroup>
+
+---
+
+## sintctl CLI
+
+`sintctl` is the command-line interface for the SINT Protocol gateway.
+
+```bash
+# Install globally
+npm install -g sintctl
+
+# Or run via npx
+npx sintctl --help
+```
+
+<CodeGroup>
+
+```bash Token operations
+# Create a token
+sintctl tokens create \
+  --agent "agent:my-assistant:v1" \
+  --resource "payments:invoices" \
+  --action read \
+  --tier standard \
+  --expires 3600
+
+# List tokens for an agent
+sintctl tokens list --agent "agent:my-assistant:v1"
+
+# Revoke a token
+sintctl tokens revoke tok_01HXYZ...
+
+# Inspect a token
+sintctl tokens inspect sint_cap_01HXYZ...
+```
+
+```bash Ledger queries
+# Show recent ledger entries
+sintctl ledger list
+
+# Filter by agent
+sintctl ledger list --agent "agent:my-assistant:v1"
+
+# Show a specific entry
+sintctl ledger get le_01HXYZ...
+
+# Export to JSON
+sintctl ledger export --format json --output ledger.json
+```
+
+```bash Keypair management
+# Generate a new keypair
+sintctl keypair generate
+
+# Show current public key
+sintctl keypair show
+
+# Rotate keypair (invalidates all existing tokens)
+sintctl keypair rotate
+```
+
+</CodeGroup>
+
+---
+
+## Environment Variables
+
+Configure the gateway server via environment variables. Copy `.env.example` to `.env` in `apps/gateway-server/`.
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `SINT_API_KEY` | Yes | — | Ed25519 private key for token signing. Generate with `POST /v1/keypair`. |
+| `SINT_STORE` | No | `sqlite://./sint.db` | Persistence backend. Supports `sqlite://`, `postgres://`. |
+| `SINT_CACHE` | No | `memory://` | Cache backend. Supports `memory://`, `redis://host:port`. |
+| `PORT` | No | `4100` | Port the gateway listens on. |
+| `LOG_LEVEL` | No | `info` | Log verbosity: `debug`, `info`, `warn`, `error`. |
+| `CORS_ORIGINS` | No | `*` | Comma-separated allowed origins for CORS. |
+
+Example `.env`:
+
+```bash
+SINT_API_KEY=ed25519:your_base64url_private_key_here
+SINT_STORE=postgres://user:pass@localhost:5432/sint
+SINT_CACHE=redis://localhost:6379
+PORT=4100
+LOG_LEVEL=info
+CORS_ORIGINS=https://app.example.com,https://api.example.com
+```
+
+---
+
+## Docker Deployment
+
+<CodeGroup>
+
+```bash Docker run
+docker run -d \
+  --name sint-gateway \
+  -p 4100:4100 \
+  -e SINT_API_KEY=ed25519:your_key_here \
+  -e SINT_STORE=postgres://user:pass@host:5432/sint \
+  -e SINT_CACHE=redis://cache:6379 \
+  ghcr.io/sint-ai/gateway-server:latest
+```
+
+```yaml docker-compose.yml
+version: '3.9'
+
+services:
+  gateway:
+    image: ghcr.io/sint-ai/gateway-server:latest
+    ports:
+      - "4100:4100"
+    environment:
+      SINT_API_KEY: ${SINT_API_KEY}
+      SINT_STORE: postgres://sint:sint@postgres:5432/sint
+      SINT_CACHE: redis://redis:6379
+      PORT: 4100
+      LOG_LEVEL: info
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: sint
+      POSTGRES_PASSWORD: sint
+      POSTGRES_DB: sint
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sint"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+```
+
+```dockerfile Build from source
+FROM node:20-alpine AS base
+RUN npm install -g pnpm@9
+
+WORKDIR /app
+COPY . .
+
+RUN pnpm install --frozen-lockfile
+RUN pnpm build
+
+FROM node:20-alpine AS runner
+WORKDIR /app
+
+COPY --from=base /app/apps/gateway-server/dist ./dist
+COPY --from=base /app/apps/gateway-server/package.json ./
+
+ENV NODE_ENV=production
+EXPOSE 4100
+
+CMD ["node", "dist/index.js"]
+```
+
+</CodeGroup>
+
+<Note>
+  For production deployments, always set `SINT_API_KEY` from a secrets manager (AWS Secrets Manager, Vault, Railway secrets). Never hardcode keys in docker-compose files.
+</Note>

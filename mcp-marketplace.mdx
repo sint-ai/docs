@@ -1,132 +1,163 @@
 ---
-title: "SINT MCP Marketplace"
+title: "MCP Integration"
+description: "SINT's Model Context Protocol integration — governed tool access for AI agents with capability-scoped discovery and execution."
+sidebarTitle: "MCP Integration"
 ---
 
-# **1. Executive Summary**
+## Overview
 
-The **SINT MCP Marketplace** is an advanced platform for managing and executing Modular Cloud Programs (MCPs). It is designed for high-security applications where modular, on-demand cloud logic must be discoverable and executable by authenticated users or AI agents. The system integrates advanced security models, serverless execution, developer-friendly onboarding, and future Web3 and edge computing capabilities.
+SINT Protocol integrates with the **Model Context Protocol (MCP)** — the open standard for connecting AI models to external tools and data sources. SINT adds a security and governance layer on top of MCP, ensuring every tool invocation is authenticated, authorized, constrained, and logged.
 
-### **Key Capabilities:**
-
-- **Confidential Execution**: Hardware-backed compute enclaves (AWS Lambda, KMS encryption, IAM isolation).
-- **Zero Trust Security**: Multi-layer authentication, granular token scoping, and audit logging.
-- **Scalability**: Auto-scaling serverless infrastructure with provisioned concurrency for low-latency use cases.
-- **Extensible API-first Approach**: OpenAPI specifications for each MCP.
-- **Developer and AI Agent Support**: Ready for autonomous agents and human developers.
-
----
-
-## **2. System Architecture**
-
-### **2.1 Layered Design**
-
-1. **Presentation Layer**
-   - Web (Next.js) UI, CLI tools, chatbot interfaces.
-   - Handles login, service connections, and MCP invocation.
-2. **API Gateway Layer**
-   - AWS API Gateway routes and validates requests.
-   - Uses Cognito/Keycloak JWT validation.
-3. **Orchestration & Business Logic Layer**
-   - Node.js microservice managing routing, session tokens, scope validation, and MCP matching.
-4. **Execution Layer**
-   - AWS Lambda, one per MCP for strict isolation.
-   - Stateless runtime for ephemeral execution.
-5. **Data Layer**
-   - PostgreSQL for metadata and relational data.
-   - DynamoDB for fast lookups and caching.
-   - AWS Secrets Manager for encrypted token storage.
-6. **Monitoring & Logging Layer**
-   - CloudWatch (logs and metrics), Datadog (dashboards), X-Ray (distributed tracing).
-
-### **2.2 Core Interaction Flow**
-
-1. User logs in through Keycloak → obtains JWT session token.
-2. User connects a service (e.g., Google) → OAuth token stored in encrypted vault.
-3. User selects MCP → system verifies required scopes.
-4. MCP request routed through API Gateway → Lambda invoked.
-5. Lambda executes business logic using scoped tokens.
-6. Result returned, logged, and metrics updated.
+<Info>
+**Packages:** `@sint/bridge-mcp` (bridge adapter), `sint-mcp` (MCP server app), `sint-mcp-scanner` (discovery tool)
+</Info>
 
 ---
 
-## **3. Security Model**
+## How It Works
 
-### **3.1 Authentication & Authorization**
+Standard MCP exposes tools to AI agents without governance. SINT wraps MCP with the Policy Gateway:
 
-- **Identity Provider**: Keycloak, configured for OAuth 2.1 PKCE.
-- **Session Tokens**: Short-lived JWT with refresh token rotation.
-- **Third-Party Tokens**: Separate encrypted storage per user/service.
-- **Access Scopes**: MCP-specific scope declarations enforced at runtime.
+```
+AI Agent → MCP Client → SINT MCP Server → Policy Gateway → MCP Tool Server
+                              ↕                                    ↕
+                        Evidence Ledger                       Tool Result
+```
 
-### **3.2 Execution Isolation**
-
-- Each MCP Lambda has:
-  - Dedicated IAM role with least privilege.
-  - VPC-based egress filtering.
-  - No persistent storage (ephemeral only).
-- AWS Shield \+ WAF to prevent DDoS attacks.
-
-### **3.3 Data Protection**
-
-- AES-256 envelope encryption for stored tokens and secrets.
-- All API traffic over HTTPS/TLS 1.3.
-- Structured logging with PII redaction.
+Every tool call passes through the intercept pipeline — capability token verification, constraint checking, tier enforcement, and evidence logging — before reaching the target tool server.
 
 ---
 
-## **4. Data Model & Storage**
+## SINT MCP Server
 
-### **4.1 Entities**
+The `sint-mcp` app (`apps/sint-mcp/`) exposes SINT Protocol as an MCP-compatible server. Any MCP client (Claude, OpenAI, Cursor, etc.) can connect to it and access SINT-governed resources.
 
-- **Users**: Core identity and session data.
-- **MCP Registry**: Metadata, OpenAPI spec links, tags, and owner.
-- **Authorizations**: Linked third-party tokens with scope/expiry.
-- **Executions**: Invocation payloads, responses, and performance metrics.
-- **Feedback**: Ratings and developer-provided comments.
-- **Logs**: Structured event logs with request IDs.
+### Capabilities Exposed
 
----
+| MCP Resource | SINT Feature | Description |
+|:-------------|:-------------|:------------|
+| `sint/intercept` | Policy Gateway | Submit an action for policy evaluation |
+| `sint/tokens` | Capability Tokens | Create, delegate, revoke tokens |
+| `sint/ledger` | Evidence Ledger | Query audit trail, generate proofs |
+| `sint/health` | Gateway Health | System status and readiness |
+| `sint/schemas` | Schema Catalog | Available validation schemas |
 
-## **5. DevOps Pipeline**
+### Starting the MCP Server
 
-### **5.1 CI/CD Steps**
+```bash
+cd apps/sint-mcp
+pnpm build
+pnpm start
+```
 
-1. **Developer Commit** → GitHub Actions triggered.
-2. **Code Linting & Testing** → Pre-build validation.
-3. **OpenAPI Validation** → Ensures MCP spec compliance.
-4. **Security Scan** → SAST, dependency vulnerability check.
-5. **Build Lambda Package** → Dockerized or ZIP build.
-6. **Deploy to Staging** → Blue/green strategy.
-7. **Integration Tests** → Automated runtime validation.
-8. **Promote to Production** → Canary or full release.
+Or use with Claude Desktop / any MCP client:
 
-### **5.2 Observability & Incident Response**
-
-- CloudWatch Alarms for latency and error spikes.
-- Datadog dashboards for live performance.
-- Slack PagerDuty integration for incidents.
-- Sentry for front-end and API error tracking.
-
----
-
-## **6. Edge Cases & Failure Modes**
-
-- **Expired Tokens**: Automatic refresh, fallback to reauthorization.
-- **OAuth Consent Denial**: MCP invocation blocked with user notification.
-- **Cold Start Delays**: Provisioned concurrency and scheduled warmups.
-- **Registry Outage**: Cache-based failover for MCP metadata.
-- **Execution Timeout**: Lambda configured for 30s max execution with fallback messaging.
+```json
+{
+  "mcpServers": {
+    "sint": {
+      "command": "node",
+      "args": ["apps/sint-mcp/dist/index.js"],
+      "env": {
+        "SINT_GATEWAY_URL": "http://localhost:4100"
+      }
+    }
+  }
+}
+```
 
 ---
 
-## **7. API Specifications (Condensed)**
+## MCP Scanner
 
-### **Endpoints**
+The `sint-mcp-scanner` app discovers and catalogs MCP servers across your environment:
 
-- POST /auth/login – Keycloak login.
-- GET /auth/callback – Token exchange.
-- GET /mcp – List MCPs.
-- GET /mcp/{id} – Get MCP metadata.
-- POST /mcp/{id}/invoke – Execute MCP.
-- GET /profile/services – View service connections.
-- POST /profile/services/{service}/connect – Link third-party service.
+```bash
+cd apps/sint-mcp-scanner
+pnpm build
+pnpm start
+```
+
+It scans for MCP servers and registers discovered tools with the SINT gateway for governance tracking.
+
+---
+
+## Capability-Scoped Tool Discovery
+
+Unlike standard MCP where all tools are visible to all agents, SINT filters tool discovery based on the agent's capability token:
+
+<Steps>
+  <Step title="Agent connects to SINT MCP Server">
+    The agent presents its Ed25519 identity and capability token.
+  </Step>
+  <Step title="Token is validated">
+    The Policy Gateway verifies the signature, checks expiry, and evaluates delegation chain.
+  </Step>
+  <Step title="Tools are filtered">
+    Only tools matching the token's `resource` and `action` scope are returned in the tool list.
+  </Step>
+  <Step title="Invocations are governed">
+    Each tool call passes through the full intercept pipeline with constraint enforcement.
+  </Step>
+</Steps>
+
+This means an agent with a token scoped to `resource: "robot-arm-1"` will only see tools relevant to that robot arm — not the entire tool catalog.
+
+---
+
+## Integration with MCP Ecosystem
+
+SINT's MCP bridge works with any MCP-compatible client:
+
+| Client | Status | Notes |
+|:-------|:-------|:------|
+| **Claude** (Anthropic) | ✅ Supported | Claude Desktop, Claude Code |
+| **Cursor** | ✅ Supported | IDE integration |
+| **OpenAI** | ✅ Supported | ChatGPT + GPT API with MCP |
+| **Custom clients** | ✅ Supported | Any MCP SDK implementation |
+
+And any MCP-compatible tool server:
+
+| Server Type | Example | Governance |
+|:------------|:--------|:-----------|
+| File systems | Local files, S3, GCS | Read/write scoping |
+| Databases | PostgreSQL, SQLite | Query-level access control |
+| APIs | REST, GraphQL | Endpoint-level capability tokens |
+| Physical systems | ROS2, OPC-UA | Full constraint enforcement |
+
+---
+
+## Security Guarantees
+
+Every MCP tool invocation through SINT inherits the full security stack:
+
+| Layer | Protection |
+|:------|:-----------|
+| **Authentication** | Ed25519 agent identity verification |
+| **Authorization** | Capability token scope matching |
+| **Constraints** | Physical limits enforced per-invocation |
+| **Audit** | Every tool call logged to evidence ledger |
+| **Anomaly detection** | Goal hijack scanner on tool arguments |
+
+<Warning>
+MCP tool arguments are passed through the goal hijack detector. If tool arguments contain patterns matching prompt injection (25+ regex patterns, 0.6 confidence threshold), the request is denied and flagged.
+</Warning>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Protocol Bridges" icon="puzzle-piece" href="/bridges">
+    See all 12 protocol bridges including the MCP bridge
+  </Card>
+  <Card title="Policy Gateway" icon="shield-halved" href="/gate">
+    How SINT enforces policy on every tool call
+  </Card>
+  <Card title="Getting Started" icon="rocket" href="/getting-started">
+    Set up SINT Protocol and connect your first MCP client
+  </Card>
+  <Card title="SDKs" icon="code" href="/sdks">
+    TypeScript, Python, and Go SDKs for programmatic access
+  </Card>
+</CardGroup>

@@ -1,0 +1,245 @@
+---
+title: Avatar System
+description: 3D talking AI avatar with real-time lipsync, ARKit blendshapes, and LLM-driven conversation.
+sidebarTitle: Avatars
+---
+
+# Avatar System
+
+The SINT Avatar System is a real-time 3D conversational interface built on React Three Fiber with ElevenLabs TTS lipsync, ARKit 52 blendshape animation, and a Node.js streaming backend. It renders a fully animated avatar capable of lip-synced speech, expressive emotion, and interactive UI widgets.
+
+## Architecture
+
+The system is split into three layers: a React/R3F client, a Node.js streaming server, and a shared package for types and blendshape definitions.
+
+```
+sint-avatars/
+├── apps/
+│   ├── client/src/          # React 19 + Three.js frontend
+│   └── server/src/          # Node.js streaming backend
+└── packages/
+    └── shared/src/          # Shared types and ARKit blendshapes
+```
+
+<CardGroup cols={3}>
+  <Card title="Client" icon="monitor" href="#client">
+    React 19 + React Three Fiber rendering pipeline with ARKit blendshape animation
+  </Card>
+  <Card title="Server" icon="server" href="#server">
+    Node.js streaming chat server with LLM integration and conversation context assembly
+  </Card>
+  <Card title="Shared" icon="package" href="#shared-package">
+    ARKit 52 blendshape definitions and TypeScript types shared across client and server
+  </Card>
+</CardGroup>
+
+---
+
+## Client
+
+**Location:** `apps/client/src/`  
+**Stack:** React 19, Three.js, React Three Fiber, ElevenLabs Streaming TTS
+
+### 3D Rendering
+
+The avatar renderer uses React Three Fiber (R3F) to drive a GLTF/GLB character model. Face animation is controlled through the full ARKit 52 blendshape set, defined in `packages/shared/src/arkit-blendshapes.ts`.
+
+The blendshape keys map directly to ARKit morph target names (e.g., `jawOpen`, `mouthSmileLeft`, `eyeBlinkLeft`). The renderer applies them as Three.js morph influences on the mesh's `morphTargetDictionary`.
+
+### Lipsync Pipeline
+
+Lipsync is driven by ElevenLabs streaming TTS output processed in real time:
+
+```
+ElevenLabs TTS stream → audio chunks → viseme extraction → blendshape weights → R3F morph targets
+```
+
+Key hooks:
+
+| Hook | Location | Responsibility |
+|------|----------|----------------|
+| `useLipsync.ts` | `apps/client/src/` | Maps visemes from TTS audio stream to ARKit blendshape weights |
+| `useBlink.ts` | `apps/client/src/` | Drives autonomous eye blink behavior with randomized timing |
+| `useAvatarBehavior.ts` | `apps/client/src/` | Coordinates overall avatar state: idle, speaking, listening |
+
+### Expressions and Animations
+
+- **12 expressions**: mapped to discrete emotional states (e.g., neutral, happy, concerned, thinking). Each expression is a weighted blend of ARKit blendshapes.
+- **21 animations**: idle cycles, gesture animations, and transition clips. Managed via Three.js `AnimationMixer` and driven by avatar behavioral state.
+
+### Voice Input
+
+`useVoiceInput.ts` handles microphone capture via the Web Audio API, streaming audio to the server for STT processing. The hook manages recording state, silence detection, and VAD (voice activity detection) to determine utterance boundaries.
+
+### Session Memory
+
+`useSessionMemory.ts` maintains a client-side conversation buffer. It stores recent turns to provide context continuity across avatar responses and enables the server to compile relevant history via `conversation-compiler.ts`.
+
+### Ambient Color System
+
+`useAmbientColors.ts` derives scene lighting and UI accent colors from the avatar's current emotional state or background environment. Color transitions are eased to avoid jarring visual changes.
+
+### UI Widgets
+
+The avatar renders interactive data widgets alongside the 3D scene. These are React components overlaid on or embedded in the R3F canvas:
+
+| Widget | Description |
+|--------|-------------|
+| `Activity` | Live activity feed or status stream |
+| `Link` | Rendered hyperlink with preview |
+| `Image` | Inline image display |
+| `Tasks` | Task list with completion state |
+| `Terminal` | Scrollable terminal output |
+| `Agents` | Active agent roster and status |
+| `Code` | Syntax-highlighted code block |
+| `Metric` | KPI display with label and value |
+| `Table` | Tabular data rendering |
+| `Status` | System or service health indicator |
+| `Diff` | Git-style diff viewer |
+| `GitHub` | GitHub PR/issue card |
+
+---
+
+## Server
+
+**Location:** `apps/server/src/`  
+**Stack:** Node.js, WebSocket streaming
+
+### Core Modules
+
+<AccordionGroup>
+  <Accordion title="streaming-chat.ts">
+    Handles real-time bidirectional chat over WebSocket. Streams LLM token output to the client as it arrives. Manages connection lifecycle, backpressure, and error recovery.
+
+    LLM responses are streamed token-by-token. The client begins TTS synthesis as soon as sentence boundaries are detected, reducing perceived latency.
+  </Accordion>
+
+  <Accordion title="conversation-compiler.ts">
+    Assembles the full conversation context sent to the LLM. Combines:
+    - Character system prompt from `character.ts`
+    - Recent turn history from the session
+    - Any injected tool outputs or widget data
+    - Content filter pass from `conversation-filter.ts`
+
+    Outputs a formatted message array conforming to the target LLM's API.
+  </Accordion>
+
+  <Accordion title="openclaw-backend.ts">
+    Integration adapter for OpenClaw agent backends. When the avatar is connected to an OpenClaw agent, this module routes messages through the OpenClaw session infrastructure instead of directly to an LLM API. Enables SINT agents to be the "brain" behind the avatar face.
+  </Accordion>
+
+  <Accordion title="conversation-filter.ts">
+    Content filtering layer applied before LLM calls and optionally on responses. Blocks or rewrites inputs that violate defined policy rules. Configurable per character/deployment.
+  </Accordion>
+
+  <Accordion title="character.ts">
+    Defines the character persona: system prompt, name, voice ID (ElevenLabs), default expressions, and behavioral parameters. Each deployment can load a different character config.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Shared Package
+
+**Location:** `packages/shared/src/`
+
+### `arkit-blendshapes.ts`
+
+Defines the full ARKit 52 blendshape key set used by both the client renderer and any tooling that generates or validates blendshape data. The 52 keys cover:
+
+- Eye movements: `eyeBlinkLeft`, `eyeBlinkRight`, `eyeWideLeft`, `eyeWideRight`, `eyeSquintLeft`, `eyeSquintRight`
+- Eye look directions: `eyeLookUpLeft`, `eyeLookUpRight`, `eyeLookDownLeft`, `eyeLookDownRight`, `eyeLookInLeft`, `eyeLookInRight`, `eyeLookOutLeft`, `eyeLookOutRight`
+- Jaw: `jawOpen`, `jawLeft`, `jawRight`, `jawForward`
+- Mouth shapes (visemes and expressions): `mouthClose`, `mouthFunnel`, `mouthPucker`, `mouthLeft`, `mouthRight`, `mouthSmileLeft`, `mouthSmileRight`, `mouthFrownLeft`, `mouthFrownRight`, `mouthDimpleLeft`, `mouthDimpleRight`, `mouthStretchLeft`, `mouthStretchRight`, `mouthRollLower`, `mouthRollUpper`, `mouthShrugLower`, `mouthShrugUpper`, `mouthPressLeft`, `mouthPressRight`, `mouthLowerDownLeft`, `mouthLowerDownRight`, `mouthUpperUpLeft`, `mouthUpperUpRight`
+- Cheeks: `cheekPuff`, `cheekSquintLeft`, `cheekSquintRight`
+- Nose: `noseSneerLeft`, `noseSneerRight`
+- Brows: `browDownLeft`, `browDownRight`, `browInnerUp`, `browOuterUpLeft`, `browOuterUpRight`
+- Tongue: `tongueOut`
+
+### `types.ts`
+
+Shared TypeScript interfaces for message payloads, blendshape animation frames, widget data schemas, and WebSocket protocol messages.
+
+---
+
+## SINT Protocol Integration
+
+The avatar connects to [SINT Protocol](/protocol) via the `@sint/avatar` package (`packages/avatar` in `sint-protocol`). This enables:
+
+- **CSML escalation**: The avatar can hand off conversations to human operators via CSML (Conversational Standard Meta Language) escalation flows.
+- **Agent backend routing**: `openclaw-backend.ts` connects avatar conversations to live OpenClaw agent sessions.
+
+---
+
+## Deployment
+
+The full stack is orchestrated with Docker Compose.
+
+<Tabs>
+  <Tab title="Docker Compose">
+    ```yaml
+    # docker-compose.yml (abbreviated)
+    services:
+      server:
+        build: ./apps/server
+        ports:
+          - "3005:3005"
+        environment:
+          - ELEVENLABS_API_KEY
+          - OPENAI_API_KEY  # or configured LLM provider
+      client:
+        build: ./apps/client
+        ports:
+          - "5173:5173"
+        depends_on:
+          - server
+    ```
+  </Tab>
+  <Tab title="Environment Variables">
+    ```env
+    # Server (apps/server)
+    ELEVENLABS_API_KEY=       # ElevenLabs TTS API key
+    ELEVENLABS_VOICE_ID=      # Voice ID for the character
+    LLM_PROVIDER=             # openai | anthropic | openclaw
+    OPENAI_API_KEY=           # If using OpenAI backend
+    ANTHROPIC_API_KEY=        # If using Anthropic backend
+    OPENCLAW_BACKEND_URL=     # If using OpenClaw agent backend
+    PORT=3005
+
+    # Client (apps/client)
+    VITE_SERVER_URL=http://localhost:3005
+    ```
+  </Tab>
+  <Tab title="Local Dev">
+    ```bash
+    # Install dependencies
+    pnpm install
+
+    # Start server (port 3005)
+    cd apps/server && pnpm dev
+
+    # Start client (port 5173)
+    cd apps/client && pnpm dev
+    ```
+  </Tab>
+</Tabs>
+
+<Note>
+  The client Vite dev server proxies WebSocket connections to the server. In production, configure a reverse proxy (nginx/Cloudflare) to route `/ws` to port 3005.
+</Note>
+
+---
+
+## Latency Characteristics
+
+| Stage | Typical Latency |
+|-------|----------------|
+| STT (voice → text) | 200–400ms |
+| LLM first token | 300–800ms (model dependent) |
+| TTS stream start | 100–200ms after first sentence |
+| Lipsync sync offset | <50ms |
+| **Total perceived latency** | **~600ms–1.4s** |
+
+<Tip>
+  Perceived latency is dominated by LLM first-token time. Use streaming-capable models and ensure the server is co-located with the LLM API endpoint for best results.
+</Tip>

@@ -1,0 +1,309 @@
+---
+title: Outreach
+description: AI-powered LinkedIn outreach automation with campaign management, ICP scoring, and AI-generated reply sequences.
+sidebarTitle: Outreach
+---
+
+# SINT Outreach
+
+SINT Outreach (`sint-outreach`) is an AI-powered LinkedIn outreach automation system. It manages multi-step prospecting campaigns, scores leads against an Ideal Customer Profile (ICP), automates connection sequences via Ulinc, and generates personalized AI replies to inbound messages.
+
+<Note>
+  **Active deployment**: BrightBeam (David Steel) — supplement and peptide industry. V1 is operational. The pipeline is currently gated on client OpenAI API key provisioning for reply generation.
+</Note>
+
+---
+
+## Architecture
+
+```
+sint-outreach/
+├── backend/                 # FastAPI (Python)
+│   ├── app/
+│   │   ├── api/             # Route handlers
+│   │   ├── models/          # SQLAlchemy ORM models
+│   │   ├── schemas/         # Pydantic request/response schemas
+│   │   ├── services/        # Business logic
+│   │   │   ├── ulinc.py     # Ulinc LinkedIn automation client
+│   │   │   ├── ghl.py       # GoHighLevel CRM integration
+│   │   │   ├── ai_reply.py  # OpenAI reply generation
+│   │   │   └── scoring.py   # ICP scoring engine
+│   │   └── main.py
+│   └── alembic/             # DB migrations (6 versions)
+└── dashboard/               # React SPA
+    └── src/
+        ├── pages/
+        │   ├── Campaigns.tsx
+        │   ├── Prospects.tsx
+        │   ├── Templates.tsx
+        │   ├── Analytics.tsx
+        │   └── Settings.tsx
+        └── ...
+```
+
+<CardGroup cols={2}>
+  <Card title="Backend" icon="server">
+    FastAPI (Python) + SQLAlchemy ORM. 6 Alembic migration versions. Handles campaign logic, Ulinc sync, CRM pushes, and AI reply generation.
+  </Card>
+  <Card title="Dashboard" icon="layout-dashboard">
+    React SPA with 5 pages: Campaigns, Prospects, Templates, Analytics, Settings.
+  </Card>
+  <Card title="Ulinc Integration" icon="linkedin">
+    Invitation-only LinkedIn automation platform. Provides connection request sending, message delivery, and reply detection. This integration is a competitive moat.
+  </Card>
+  <Card title="GoHighLevel CRM" icon="users">
+    Bidirectional prospect sync with GHL. Enriched prospects and campaign responses flow into GHL pipelines for sales follow-up.
+  </Card>
+</CardGroup>
+
+---
+
+## Backend
+
+**Stack:** FastAPI, SQLAlchemy ORM, Alembic, PostgreSQL
+
+### Database Schema
+
+Six Alembic migration versions establish the core schema:
+
+| Table | Description |
+|-------|-------------|
+| `campaigns` | Campaign configs: name, target ICP criteria, sequence steps, status |
+| `prospects` | LinkedIn profiles with enrichment data and ICP scores |
+| `sequences` | Message sequence templates with step ordering |
+| `messages` | Sent message log with delivery status and reply tracking |
+| `replies` | Inbound message content, classified intent, and AI response |
+| `analytics` | Aggregated campaign performance metrics |
+
+### API Routes
+
+```python
+# Core route groups (app/api/)
+GET  /api/campaigns            # List campaigns
+POST /api/campaigns            # Create campaign
+GET  /api/campaigns/{id}       # Campaign detail + metrics
+PUT  /api/campaigns/{id}       # Update campaign config
+POST /api/campaigns/{id}/start # Activate campaign (triggers Ulinc sync)
+POST /api/campaigns/{id}/pause # Pause execution
+
+GET  /api/prospects            # List prospects with filters
+POST /api/prospects/enrich     # Trigger enrichment pipeline
+GET  /api/prospects/{id}/score # Get ICP score for prospect
+
+GET  /api/replies              # Unreviewed replies
+POST /api/replies/{id}/respond # Send AI-generated or manual response
+
+GET  /api/analytics/summary    # Campaign-level conversion metrics
+GET  /api/analytics/campaign/{id} # Per-campaign funnel breakdown
+```
+
+### ICP Scoring
+
+The ICP scoring engine (`services/scoring.py`) evaluates prospects against configurable criteria. For BrightBeam, the target ICP is:
+
+- **Industry**: Supplements, peptides, nutraceuticals, sports nutrition
+- **Role**: Founders, CMOs, Head of Growth, Marketing Directors
+- **Company size**: 10–500 employees
+- **Engagement signals**: Active LinkedIn presence, recent posts on relevant topics
+
+Each prospect receives a score (0–100) derived from weighted attribute matching. Scores above a configurable threshold (default: 65) are eligible for outreach.
+
+---
+
+## Integrations
+
+### Ulinc
+
+<Warning>
+  Ulinc access is invitation-only. Do not share credentials or expose the Ulinc session token. This integration is a core competitive differentiator.
+</Warning>
+
+Ulinc handles the LinkedIn automation layer:
+
+- **Connection requests**: Sends personalized invite messages within LinkedIn's daily limits
+- **Message delivery**: Routes follow-up sequence messages via Ulinc's queue
+- **Reply detection**: Webhooks or polling for inbound message events
+- **Campaign sync**: Ulinc campaigns map 1:1 to `sint-outreach` campaigns
+
+```python
+# services/ulinc.py — core methods
+class UlincClient:
+    def sync_campaign(self, campaign_id: str) -> SyncResult: ...
+    def send_connection_request(self, prospect: Prospect, message: str) -> bool: ...
+    def get_replies(self, since: datetime) -> list[Reply]: ...
+    def get_campaign_stats(self, ulinc_campaign_id: str) -> CampaignStats: ...
+```
+
+### GoHighLevel (GHL) CRM
+
+Enriched prospects are pushed to GHL contacts with custom field mappings. Reply events trigger pipeline stage updates in GHL.
+
+```python
+# services/ghl.py — core methods
+class GHLClient:
+    def upsert_contact(self, prospect: Prospect) -> GHLContact: ...
+    def update_pipeline_stage(self, contact_id: str, stage: str) -> bool: ...
+    def add_note(self, contact_id: str, content: str) -> bool: ...
+```
+
+### LinkedIn MCP Server
+
+The LinkedIn MCP server provides structured profile lookup and enrichment beyond what Ulinc exposes. Used in the prospect enrichment pipeline to populate missing fields (job title, company size, industry classification) before ICP scoring.
+
+### OpenAI API
+
+Reply generation (`services/ai_reply.py`) uses the OpenAI Chat Completions API to draft context-aware responses to inbound LinkedIn messages.
+
+```python
+# services/ai_reply.py (abbreviated)
+def generate_reply(prospect: Prospect, inbound_message: str, campaign: Campaign) -> str:
+    system_prompt = build_system_prompt(campaign.persona, campaign.product_context)
+    response = openai_client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": inbound_message},
+        ],
+        max_tokens=300,
+        temperature=0.7,
+    )
+    return response.choices[0].message.content
+```
+
+<Warning>
+  **Current blocker**: Reply generation is paused until the client (BrightBeam) provisions their OpenAI API key. The endpoint is implemented and tested; it requires `OPENAI_API_KEY` in the server environment.
+</Warning>
+
+---
+
+## Campaign Features
+
+### Multi-Step Sequences
+
+Campaigns execute message sequences with configurable timing between steps:
+
+<Steps>
+  <Step title="Connection Request">
+    Personalized invite sent via Ulinc. Includes a short opener referencing the prospect's ICP-matched attribute (e.g., industry, recent post).
+  </Step>
+  <Step title="Follow-Up 1">
+    Sent N days after connection acceptance. Introduces the product/service in context of the prospect's pain points.
+  </Step>
+  <Step title="Follow-Up 2">
+    Social proof or case study message. Sent if no reply to Follow-Up 1.
+  </Step>
+  <Step title="Reply Detection">
+    Ulinc polls for replies. On detection, the reply is logged to `replies` table and queued for AI generation.
+  </Step>
+  <Step title="AI Response">
+    `ai_reply.py` generates a draft response. Auto-sends or queues for operator review based on campaign `auto_reply` flag.
+  </Step>
+</Steps>
+
+### A/B Testing
+
+Campaigns support A/B variants on:
+- Connection request message text
+- Follow-up timing (day 2 vs day 4)
+- Opener framing (pain-focused vs outcome-focused)
+
+Variants are assigned at the prospect level. The analytics module tracks conversion rates per variant and surfaces the winner.
+
+### Prospect Enrichment Pipeline
+
+```
+LinkedIn profile URL
+  → LinkedIn MCP Server (profile data)
+  → ICP scorer (score 0–100)
+  → GHL contact upsert
+  → Campaign eligibility check (score ≥ threshold)
+  → Ulinc campaign enrollment
+```
+
+---
+
+## Dashboard
+
+**Stack:** React, 5-page SPA
+
+<Tabs>
+  <Tab title="Campaigns">
+    Campaign list with status (active/paused/complete), prospect counts, connection rate, reply rate, and conversion rate. Create and configure new campaigns with step builder.
+  </Tab>
+  <Tab title="Prospects">
+    Paginated prospect table with ICP score, enrichment status, campaign assignment, and sequence step. Bulk import via CSV. Manual enrichment trigger per row.
+  </Tab>
+  <Tab title="Templates">
+    Message template editor. Templates are parameterized with `{{first_name}}`, `{{company}}`, `{{industry}}` placeholders resolved at send time. Version history per template.
+  </Tab>
+  <Tab title="Analytics">
+    Funnel visualization: invites sent → connections accepted → replies received → meetings booked. Time-series charts for daily volume. Per-campaign breakdown table.
+  </Tab>
+  <Tab title="Settings">
+    Ulinc API credentials, GHL API key, OpenAI API key, daily send limits, ICP threshold configuration, and auto-reply toggle.
+  </Tab>
+</Tabs>
+
+---
+
+## Deployment
+
+<Tabs>
+  <Tab title="Environment Variables">
+    ```env
+    # Backend
+    DATABASE_URL=postgresql://user:pass@host:5432/outreach
+    ULINC_API_KEY=
+    ULINC_BASE_URL=https://ulinc.co/api
+    GHL_API_KEY=
+    GHL_LOCATION_ID=
+    OPENAI_API_KEY=              # Required for AI reply generation
+    LINKEDIN_MCP_URL=            # LinkedIn MCP server endpoint
+
+    # Dashboard
+    VITE_API_BASE_URL=https://api.outreach.sint.gg
+    ```
+  </Tab>
+  <Tab title="Database Migrations">
+    ```bash
+    # Apply all migrations
+    cd backend && alembic upgrade head
+
+    # Check current version
+    alembic current
+
+    # Generate new migration
+    alembic revision --autogenerate -m "description"
+    ```
+  </Tab>
+  <Tab title="Local Dev">
+    ```bash
+    # Backend (FastAPI with hot reload)
+    cd backend
+    pip install -r requirements.txt
+    uvicorn app.main:app --reload --port 8000
+
+    # Dashboard
+    cd dashboard
+    pnpm install && pnpm dev
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Business Context
+
+| Dimension | Detail |
+|-----------|--------|
+| Active client | BrightBeam (David Steel) |
+| Industry | Supplements, peptides, nutraceuticals |
+| Pilot engagement | $5,000 |
+| Target retainer | $10,000–$25,000/month |
+| V1 status | Operational — campaign running |
+| Current blocker | Client OpenAI API key provisioning |
+| Integration moat | Invitation-only Ulinc access |
+
+<Tip>
+  The Ulinc integration is the primary competitive differentiator. Ulinc provides LinkedIn automation at scale within platform rate limits; access is not publicly available and was secured through a direct partnership.
+</Tip>

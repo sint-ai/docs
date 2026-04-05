@@ -1,35 +1,77 @@
 ---
-title: "SINT"
-description: "Train Your Synthetic Intelligence, Own the Future"
-sidebarTitle: "Meet the SINT"
-og:image: "https://mintlify.s3.us-west-1.amazonaws.com/sint/images/hero-light.jpg"
+title: Introduction
+description: SINT Protocol — open-source safety and governance framework for physical AI systems.
+sidebarTitle: Introduction
 ---
 
-<img
-  className="block dark:hidden"
-  src="/images/hero-light.jpg"
-  alt="Hero Light"
-/>
+## What is SINT?
 
-<img
-  className="hidden dark:block"
-  src="/images/hero-dark.jpg"
-  alt="Hero Dark"
-/>
+SINT Protocol is an open-source safety and governance framework for physical AI — robots, drones, autonomous vehicles, and industrial automation. It implements a **Security Wedge** architecture: a mandatory policy gateway that sits between AI decision-making models and physical actuators, enforcing capability-scoped permissions, constraint boundaries, and an append-only evidence ledger on every action.
 
-## About SINT
+Every action an AI agent attempts against the physical world must pass through the SINT Gate — a single `intercept()` entry point backed by Ed25519-signed capability tokens, a five-tier safety classification system (T1 Sandbox → T5 Unsupervised), and CSML (Continuous Safety Monitoring Language) anomaly detection. Governance is decentralized through an Open Agent Trust Registry, enabling multi-operator deployments without a single point of credential authority.
 
-The SINT Agentic Platform is a pioneering fusion of synthetic intelligence (SINT) and Web3 technologies, designed to empower users to create, customize, train, evolve, and monetize autonomous AI agents within a decentralized ecosystem. By integrating advanced AI frameworks with blockchain infrastructure, SINT redefines human-AI interaction through autonomy, gamification, and co-ownership. Built on partnerships with SophiaVerse, [Fetch.ai](http://Fetch.ai), Agentverse, SingularityNET, and multi-chain ecosystems like Solana, Cosmos SDK, and Ethereum, SINT delivers a scalable, interoperable platform that bridges AI innovation with Web3 economies.
+---
 
-At its technical core, the **SINT Agentic Framework** introduces the **Model Context Protocol (MCP)**—an open-source, community-driven standard for context management—and an **Authentication Layer** comprising an OAuth Server and Delegated Wallets. These components ensure secure, interoperable agent interactions across diverse ecosystems. A reputation-based **Agents Marketplace** and sustainable tokenomics further reinforce SINT as a user-driven platform poised to evolve toward autonomous superintelligence (ASI).
-
-Our mission is to democratize AI development, enabling individuals and organizations to deploy AI agents for tasks such as cryptocurrency trading, social engagement, data mining, and DeFi automation, all while fostering a tokenized economy that rewards participation, innovation, and security.
+## Core Products
 
 <CardGroup cols={2}>
-  <Card title="Visit SINT Platform" icon="globe" href="https://sint.gg">
-    Create, train & earn with AI agents
+  <Card title="SINT Protocol" icon="shield-halved" href="/architecture">
+    The core open-source monorepo. 24 packages, 5 apps, 3 SDKs. Safety gateway, capability tokens, evidence ledger.
   </Card>
-  <Card title="Get in Touch" icon="envelope" href="mailto:team@sint.gg">
-    Have questions? Email the SINT team
+  <Card title="SINT Gate" icon="lock" href="/gate">
+    The policy enforcement engine. `intercept()` API, five-tier safety tiers, constraint system, approval queue.
+  </Card>
+  <Card title="Architecture" icon="diagram-project" href="/architecture">
+    Full system overview: package map, gateway server, bridge ecosystem, data flow diagrams.
+  </Card>
+  <Card title="Whitepaper" icon="file-lines" href="/whitepaper">
+    Formal specification of the Security Wedge model, invariants, threat model, and formal safety proofs.
+  </Card>
+  <Card title="Avatar System" icon="robot" href="/avatars">
+    3D talking AI avatar with ElevenLabs lipsync, CSML-driven expression escalation, and real-time operator UI.
+  </Card>
+  <Card title="Security Model" icon="key" href="/security">
+    Ed25519 token cryptography, delegation chains, goal hijack detection, circuit breaker invariants.
   </Card>
 </CardGroup>
+
+---
+
+## Key Numbers
+
+| Metric | Value |
+|--------|-------|
+| Packages in monorepo | 24 |
+| Apps | 5 (`gateway-server`, `sintctl`, `sint-mcp`, `sint-mcp-scanner`, `dashboard`) |
+| SDKs | 3 (TypeScript client, MCP bridge, CLI) |
+| Test suite | 1,363 tests |
+| Protocol bridges | 11 (ROS2, gRPC, MCP, MQTT/Sparkplug, OPC-UA, MAVLink, A2A, IoT, OpenRMF, Economy, Swarm) |
+| Safety tiers | 5 (T1 Sandbox → T5 Unsupervised) |
+| REST endpoints | 32 across 10 route modules |
+| Delegation depth | Max 3 (attenuation-only) |
+| Goal hijack patterns | 25+ regex patterns |
+| Ledger integrity | SHA-256 hash chain (genesis → append-only) |
+| Token crypto | Ed25519 via `@noble/ed25519` |
+
+---
+
+## Quick Links
+
+<CardGroup cols={2}>
+  <Card title="GitHub — sint-ai org" icon="github" href="https://github.com/sint-ai">
+    Browse the monorepo, open issues, and contribute.
+  </Card>
+  <Card title="sint-protocol repo" icon="code-branch" href="https://github.com/sint-ai/sint-protocol">
+    Main protocol repository. `packages/`, `apps/`, `sdks/`.
+  </Card>
+  <Card title="Discord" icon="discord" href="https://discord.gg/sint">
+    Join the community for protocol discussions and support.
+  </Card>
+  <Card title="Telegram" icon="telegram" href="https://t.me/sintai">
+    Operator channel for announcements and deployment support.
+  </Card>
+</CardGroup>
+
+<Note>
+  SINT Protocol is open-source under the MIT license. The gateway server and CLI are production-ready. Avatar system and Operators platform are in active development.
+</Note>

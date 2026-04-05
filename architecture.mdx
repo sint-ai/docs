@@ -1,0 +1,244 @@
+---
+title: Architecture
+description: Technical architecture of SINT Protocol — monorepo package map, gateway server, bridge ecosystem, and data flow.
+sidebarTitle: Architecture
+---
+
+## System Overview
+
+SINT Protocol sits as a mandatory intermediary between AI decision-making and the physical world. No AI agent can actuate a physical resource without passing through the Policy Gateway.
+
+```
+Agent
+  │
+  ▼
+Token Request  ──►  POST /v1/tokens  (Ed25519 key pair required)
+  │
+  ▼
+Policy Gateway  ──►  intercept(token, action, context)
+  │
+  ├──► APPROVE  ──►  Actuator (with constraint envelope)
+  ├──► DENY     ──►  Evidence logged, caller gets 403
+  └──► ESCALATE ──►  Approval Queue (human-in-the-loop)
+```
+
+The gateway is **synchronous on the critical path**. Every intercept call blocks until a policy decision is made. Async patterns (SSE approval streams, WebSocket risk feeds) are additive, not substitutes for the synchronous gate.
+
+---
+
+## Package Map
+
+The monorepo at `sint-ai/sint-protocol` is organized into `packages/`, `apps/`, and `sdks/`.
+
+<Tabs>
+  <Tab title="Core">
+    | Package | Path | Responsibility |
+    |---------|------|----------------|
+    | `@sint/core` | `packages/core` | Shared TypeScript types, Zod schemas, constants. All other packages import from here. |
+    | `@sint/gate-capability-tokens` | `packages/gate-capability-tokens` | Ed25519 token issuance, validation, delegation. Wraps `@noble/ed25519`. |
+    | `@sint/gate-policy-gateway` | `packages/gate-policy-gateway` | The intercept engine. Policy evaluation pipeline, tier assignment, constraint enforcement. |
+    | `@sint/gate-evidence-ledger` | `packages/gate-evidence-ledger` | SHA-256 hash chain ledger. Append-only evidence records, proof receipts, SIEM export. |
+  </Tab>
+  <Tab title="Persistence">
+    | Package | Path | Responsibility |
+    |---------|------|----------------|
+    | `@sint/persistence` | `packages/persistence` | Abstract adapter interfaces. Storage-agnostic CRUD for tokens, ledger, approvals. |
+    | `@sint/persistence-postgres` | `packages/persistence-postgres` | PostgreSQL implementation via Drizzle ORM. Redis for approval queue pub/sub and rate-limit counters. |
+  </Tab>
+  <Tab title="Bridges">
+    | Package | Path | Protocol |
+    |---------|------|----------|
+    | `@sint/bridge-ros2` | `packages/bridge-ros2` | ROS2 (Robot Operating System 2) — pub/sub topic intercept |
+    | `@sint/bridge-mcp` | `packages/bridge-mcp` | Model Context Protocol — tool call intercept |
+    | `@sint/bridge-grpc` | `packages/bridge-grpc` | gRPC — unary and streaming RPC intercept |
+    | `@sint/bridge-a2a` | `packages/bridge-a2a` | Agent-to-Agent protocol — cross-agent delegation |
+    | `@sint/bridge-economy` | `packages/bridge-economy` | On-chain economy — token-gated resource accounting |
+    | `@sint/bridge-mqtt-sparkplug` | `packages/bridge-mqtt-sparkplug` | MQTT with Sparkplug B payload — industrial IoT |
+    | `@sint/bridge-opcua` | `packages/bridge-opcua` | OPC-UA — industrial automation and SCADA |
+    | `@sint/bridge-iot` | `packages/bridge-iot` | Generic IoT device management |
+    | `@sint/bridge-mavlink` | `packages/bridge-mavlink` | MAVLink v2 — drones, UAVs, ArduPilot/PX4 |
+    | `@sint/bridge-open-rmf` | `packages/bridge-open-rmf` | OpenRMF — multi-robot fleet management |
+    | `@sint/bridge-swarm` | `packages/bridge-swarm` | Swarm coordination — multi-agent consensus |
+  </Tab>
+  <Tab title="Engines">
+    | Package | Path | Responsibility |
+    |---------|------|----------------|
+    | `@sint/engine-hal` | `packages/engine-hal` | Hardware Abstraction Layer — normalizes physical device interfaces |
+    | `@sint/engine-system1` | `packages/engine-system1` | Fast reactive control loop (System 1 cognition analog) |
+    | `@sint/engine-system2` | `packages/engine-system2` | Deliberative reasoning engine (System 2 cognition analog) |
+    | `@sint/engine-capsule-sandbox` | `packages/engine-capsule-sandbox` | T1 sandbox runtime — isolated sim environment, no physical I/O |
+  </Tab>
+  <Tab title="Avatar & Client">
+    | Package | Path | Responsibility |
+    |---------|------|----------------|
+    | `@sint/avatar` | `packages/avatar` | 3D talking avatar, ElevenLabs lipsync, CSML-driven expression escalation |
+    | `@sint/client` | `packages/client` | TypeScript SDK for external consumers. Typed wrappers around all 32 REST endpoints. |
+  </Tab>
+</Tabs>
+
+---
+
+## Gateway Server
+
+The `gateway-server` app (`apps/gateway-server`) is a **Hono-based HTTP server** — chosen for its edge-compatible runtime, typed routing, and middleware composability.
+
+### Route Modules
+
+32 endpoints across 10 route modules:
+
+| Module | Prefix | Endpoints | Auth |
+|--------|--------|-----------|------|
+| `health` | `/health` | `GET /`, `GET /ready`, `GET /live` | None |
+| `intercept` | `/v1/intercept` | `POST /` | Ed25519 agent signature |
+| `tokens` | `/v1/tokens` | `POST /`, `GET /:id`, `POST /delegate`, `DELETE /:id`, `GET /` | Ed25519 + API key |
+| `ledger` | `/v1/ledger` | `GET /`, `GET /:id`, `GET /proof/:id`, `POST /verify`, `GET /export` | API key |
+| `approvals` | `/v1/approvals` | `GET /`, `GET /:id`, `POST /:id/approve`, `POST /:id/deny`, `GET /stream` (SSE) | API key |
+| `discovery` | `/v1/discovery` | `GET /agents`, `GET /agents/:id`, `POST /agents/register`, `DELETE /agents/:id` | API key |
+| `economy` | `/v1/economy` | `GET /balance`, `POST /charge`, `GET /transactions` | Ed25519 agent signature |
+| `a2a` | `/v1/a2a` | `POST /delegate`, `GET /trust-chain/:id`, `POST /revoke` | Ed25519 agent signature |
+| `risk-stream` | `/v1/risk` | `GET /stream` (WebSocket), `GET /snapshot` | API key |
+| `dashboard` | `/v1/dashboard` | `GET /stats`, `GET /agents`, `GET /alerts` | API key |
+
+### Authentication
+
+<AccordionGroup>
+  <Accordion title="Ed25519 Agent Authentication">
+    Agents sign requests with their private key. The gateway verifies the signature against the agent's registered public key in the trust registry.
+
+    ```typescript
+    // Request header
+    X-Agent-Id: <agentId>
+    X-Agent-Sig: <base64url(ed25519.sign(requestBody, privateKey))>
+    X-Agent-Timestamp: <unix_ms>  // replay protection, ±30s window
+    ```
+
+    The `@noble/ed25519` library handles all crypto. No dependency on Node.js `crypto` — works in edge runtimes.
+  </Accordion>
+  <Accordion title="API Key Admin Authentication">
+    Administrative endpoints (ledger, approvals, dashboard) use a bearer token:
+
+    ```
+    Authorization: Bearer <api_key>
+    ```
+
+    Keys are scoped (read-only vs. read-write) and stored hashed in PostgreSQL. Rate limiting is enforced per-key via Redis sliding window counters.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Apps
+
+<CardGroup cols={2}>
+  <Card title="gateway-server" icon="server">
+    Production HTTP server. Hono + PostgreSQL + Redis. Deployable to Railway, Docker, or any Node.js 20+ host. Entry: `apps/gateway-server/src/index.ts`.
+  </Card>
+  <Card title="sintctl" icon="terminal">
+    CLI tool for operators. Token management, ledger inspection, agent registration, e-stop triggering. Entry: `apps/sintctl/src/index.ts`.
+  </Card>
+  <Card title="sint-mcp" icon="plug">
+    MCP (Model Context Protocol) bridge server. Exposes SINT Gate as MCP tools, enabling LLMs (Claude, GPT-4o, etc.) to request physical actions through a standards-compliant interface.
+  </Card>
+  <Card title="sint-mcp-scanner" icon="magnifying-glass">
+    Scans existing MCP tool definitions and generates SINT capability token templates. Bootstraps governance for MCP-native AI agents.
+  </Card>
+  <Card title="dashboard" icon="chart-line">
+    React 19 + Redux Toolkit operator interface. Real-time risk stream via WebSocket, approval queue management, agent registry, ledger explorer.
+  </Card>
+</CardGroup>
+
+---
+
+## Security Architecture
+
+<Warning>
+  All security properties below are enforced at the protocol layer. Application-layer bypasses (e.g., calling actuators directly, skipping the gateway) are the operator's responsibility to prevent via network segmentation.
+</Warning>
+
+### Token Forgery Protection
+
+Capability tokens are Ed25519-signed JWTs. The signature covers:
+
+```typescript
+// @sint/core — SintCapabilityToken
+interface SintCapabilityToken {
+  agentId: string;
+  issuerId: string;
+  resource: string;          // e.g., "robot:arm:joint_1"
+  action: string;            // e.g., "move"
+  constraints: PhysicalConstraints;
+  tier: 1 | 2 | 3 | 4 | 5;
+  issuedAt: number;          // unix ms
+  expiresAt: number;         // unix ms
+  delegationChain: string[]; // issuer public keys, root → leaf
+  nonce: string;             // UUID v4, prevents replay
+}
+```
+
+Tokens are verified on every `intercept()` call — not cached. Revocation is immediate via the ledger.
+
+### Attenuation-Only Delegation
+
+A delegated token **cannot** grant more permissions than its parent. `Math.min()` enforcement applies to all numeric constraints. Delegation depth is capped at 3 to prevent unbounded chains.
+
+```
+Root Token (T4, force≤100N)
+  └── Delegate 1 (T3, force≤50N)  ✓ attenuation
+        └── Delegate 2 (T2, force≤20N)  ✓ attenuation
+              └── Delegate 3 (T2, force≤30N)  ✗ REJECTED — exceeds parent
+```
+
+### Goal Hijack Detection
+
+The policy gateway scans every action's payload against 25+ regex patterns for prompt injection and goal hijacking attempts:
+
+- Override instructions (`ignore previous instructions`, `you are now`, etc.)
+- Exfiltration patterns (`send to`, `upload`, `transmit all`)
+- Safety bypass attempts (`disable safety`, `emergency override`, `skip verification`)
+- Jailbreak patterns (base64-encoded instructions, unicode lookalikes)
+
+Matches trigger an automatic DENY with the evidence logged for audit.
+
+### Circuit Breaker
+
+Invariant `I-G2`: the e-stop preempts all pending and in-flight intercept calls. Once tripped, **no action is approved** until manually reset by an authorized operator. CSML anomaly scores above threshold auto-trip the breaker.
+
+---
+
+## Data Flow
+
+Every `POST /v1/intercept` call traverses this pipeline synchronously:
+
+<Steps>
+  <Step title="Schema Validation">
+    Zod parses the request body against `InterceptRequestSchema`. Malformed input is rejected with 400 before any crypto operations.
+  </Step>
+  <Step title="Token Verification">
+    Ed25519 signature verified. Expiry checked. Nonce checked against Redis (replay prevention). Revocation status checked against ledger.
+  </Step>
+  <Step title="Policy Evaluation">
+    Active policies for the resource+action pair are loaded. Each policy rule is evaluated against the token claims and request context.
+  </Step>
+  <Step title="Constraint Check">
+    `PhysicalActionContext` values (force, velocity, temperature, geofence) are checked against token constraints. `Math.min` applied for delegated tokens.
+  </Step>
+  <Step title="Tier Assignment">
+    Safety tier determined from token + physical context. Human-detected proximity forces tier escalation (monotonic — never decreases mid-session).
+  </Step>
+  <Step title="Goal Hijack Scan">
+    Action payload scanned against 25+ regex patterns. Matches → immediate DENY.
+  </Step>
+  <Step title="CSML Anomaly Scoring">
+    Continuous Safety Monitoring Language evaluates behavioral anomalies (velocity spikes, unusual action sequences, out-of-envelope movements). Score above threshold → circuit breaker trip candidate.
+  </Step>
+  <Step title="Evidence Logging">
+    Decision (APPROVE/DENY/ESCALATE), token hash, action hash, tier, constraints, and CSML score appended to the SHA-256 hash chain ledger.
+  </Step>
+  <Step title="Response">
+    `{ decision: 'approve' | 'deny' | 'escalate', evidenceId: string, approvalId?: string }` returned to caller.
+  </Step>
+</Steps>
+
+<Tip>
+  The entire pipeline for a pre-approved T4 token with no anomalies completes in under 5ms on co-located deployments. Network latency to the gateway is the dominant factor in production.
+</Tip>
