@@ -1,0 +1,219 @@
+---
+title: "Roadmap"
+description: "SINT Protocol development roadmap — from npm publish to enterprise adoption."
+sidebarTitle: "Roadmap"
+---
+
+This roadmap is based on what we've built, what the market needs right now, and the fastest path to adoption and revenue. Updated April 2026.
+
+---
+
+## ✅ Phase 0: Foundation (Complete)
+
+Everything built and verified:
+
+| Deliverable | Status | Details |
+|:------------|:-------|:--------|
+| SINT Protocol core | ✅ Complete | 24 packages, 1,363 tests, 67 build tasks |
+| Policy Gateway | ✅ Complete | 32 REST endpoints, intercept pipeline |
+| Capability Tokens | ✅ Complete | Ed25519, attenuation-only delegation, max depth 3 |
+| Evidence Ledger | ✅ Complete | SHA-256 hash chain, proof receipts, SIEM export |
+| 12 Protocol Bridges | ✅ Complete | ROS2, MCP, gRPC, MAVLink, A2A, MQTT, OPC-UA, IoT, OpenRMF, Economy, Swarm |
+| 3 SDKs | ✅ Complete | TypeScript, Python (1,871 lines), Go (220 lines) |
+| sintctl CLI | ✅ Complete | Token, ledger, approvals, policy management |
+| SINT Console | ✅ Complete | 31 features, 60+ feature flags, WebSocket gateway |
+| Visual Workflow Builder | ✅ Complete | 13 node types, topological execution, n8n integration |
+| Goal Hijack Detector | ✅ Complete | 25+ patterns, confidence scoring |
+| Security Audit | ✅ Complete | 0 vulnerabilities, all 8 attack surfaces verified |
+| Documentation | ✅ Complete | 19 pages on docs.sint.gg |
+| SINT Avatar | ✅ Complete | 3D avatar, ElevenLabs lipsync, 12 expressions |
+| CMO Operator | ✅ Complete | 18 skills, video→content pipeline |
+| SINT Outreach | ✅ Complete | LinkedIn automation, BrightBeam pilot active |
+
+---
+
+## 🚀 Phase 1: Ship & Open (April 2026)
+
+**Goal:** Make SINT Protocol installable by anyone. Get the first external integrations.
+
+<Steps>
+  <Step title="npm Publish 8 Core Packages">
+    Publish to npm registry: `@sint/core`, `@sint/gate-capability-tokens`, `@sint/gate-policy-gateway`, `@sint/gate-evidence-ledger`, `@sint/persistence`, `@sint/bridge-mcp`, `@sint/client`, `@sint/bridge-ros2`
+
+    **Blocked:** Needs NPM_TOKEN or interactive `npm login`.
+
+    **Impact:** Unlocks all downstream integration work.
+  </Step>
+  <Step title="LangChain Integration">
+    Write `@sint/langchain` — a LangChain callback handler that wraps every tool call in a SINT capability token check.
+
+    ```python
+    from sint import SintGovernanceHandler
+    chain = agent.with_config(callbacks=[SintGovernanceHandler(gateway_url)])
+    ```
+
+    **Target:** LangChain community packages, blog post on LangChain blog.
+  </Step>
+  <Step title="CrewAI Integration">
+    Write `@sint/crewai` — CrewAI task decorator that enforces capability tokens before execution.
+
+    **Target:** CrewAI plugin registry.
+  </Step>
+  <Step title="Show HN Post">
+    "Show HN: Open-source safety governance for AI agents — capability tokens, policy gateway, evidence ledger"
+
+    Position: "We built what Microsoft's Agent Governance Toolkit does, plus physical AI safety (robots, drones, industrial)."
+  </Step>
+  <Step title="NIST AI Agent Standards Submission">
+    Submit SINT Protocol as reference implementation to NIST CAISI's AI Agent Standards Initiative comment period.
+
+    Position: SINT covers all 10 OWASP Agentic Top 10 risk categories with working code.
+  </Step>
+  <Step title="OWASP ASI Listing">
+    Contact OWASP Agentic Security Initiative team. Get SINT listed as reference implementation for their compliance framework.
+  </Step>
+</Steps>
+
+**Timeline:** 2-3 weeks after npm publish unblock.
+
+---
+
+## 🔧 Phase 2: Framework Middleware (May 2026)
+
+**Goal:** Become the default governance layer for popular agent frameworks.
+
+| Integration | Framework | What We Build |
+|:------------|:----------|:-------------|
+| `@sint/langchain` | LangChain / LangGraph | Callback handler + chain interceptor |
+| `@sint/crewai` | CrewAI | Task decorator + crew-level policy |
+| `@sint/autogen` | Microsoft AutoGen | Agent runtime wrapper |
+| `@sint/google-adk` | Google ADK | Plugin for A2A governance |
+| `@sint/openai-agents` | OpenAI Agents SDK | Tool middleware |
+| `@sint/openclaw` | OpenClaw | Policy provider plugin |
+
+Each integration is a thin wrapper (~200-500 lines) that:
+1. Intercepts tool calls / agent actions
+2. Validates against SINT capability tokens
+3. Logs to evidence ledger
+4. Returns approve/deny/escalate
+
+**Success metric:** 3+ framework integrations published, 100+ npm downloads/week.
+
+---
+
+## 🤖 Phase 3: Physical AI Partnerships (June-July 2026)
+
+**Goal:** First real-world robotics integration. Prove the thesis that AI agents controlling physical systems need governed middleware.
+
+| Target | What They Do | SINT Value | Approach |
+|:-------|:-------------|:-----------|:---------|
+| **RobotecAI** (RAI) | ROS2 agentic robotics | ROS2 bridge + capability tokens | PR to rai repo with SINT safety layer |
+| **Dronecode / PX4** | Open-source drone platform | MAVLink bridge + geofence enforcement | Plugin for QGroundControl |
+| **GrayMatter Robotics** | LA-based factory AI | Force/velocity constraints + audit trail | Direct sales (local neighbor) |
+| **NVIDIA IsaacSim** | Robot simulation | T1 Sandbox → T4 Autonomous tier progression | IsaacSim extension |
+| **Open-RMF** | Multi-robot fleet mgmt | OpenRMF bridge + zone governance | Community contribution |
+
+**First target:** RobotecAI — they have a vendor-agnostic ROS2 framework with zero safety governance. Our `@sint/bridge-ros2` drops in directly.
+
+**Success metric:** 1 working robotics integration with external project.
+
+---
+
+## 🏢 Phase 4: Enterprise & Compliance (Q3 2026)
+
+**Goal:** Position SINT as the compliance answer for enterprise AI agent deployments.
+
+### OWASP Agentic Top 10 Compliance Mapping
+
+| OWASP Risk | SINT Mitigation | Package |
+|:-----------|:----------------|:--------|
+| AG01: Excessive Agency | Capability token scoping | `@sint/gate-capability-tokens` |
+| AG02: Inadequate Sandboxing | T1 Sandbox tier + capsule sandbox | `@sint/engine-capsule-sandbox` |
+| AG03: Unrestricted Resource Access | Constraint enforcement (force, velocity, geofence) | `@sint/gate-policy-gateway` |
+| AG04: Insufficient Credential Handling | Ed25519 identity, no credential sharing | `@sint/gate-capability-tokens` |
+| AG05: Prompt Injection | Goal hijack detector (25+ patterns) | `@sint/gate-policy-gateway` |
+| AG06: Inadequate Audit | SHA-256 evidence ledger + proof receipts | `@sint/gate-evidence-ledger` |
+| AG07: Lack of Human Oversight | T2 approval gates + SSE/WebSocket approval queue | Gateway server |
+| AG08: Insufficient Error Handling | Circuit breaker (e-stop invariant I-G2) | `@sint/gate-policy-gateway` |
+| AG09: Supply Chain Risk | Ed25519 supply chain verifier | `@sint/gate-policy-gateway` |
+| AG10: Insufficient Monitoring | CSML anomaly scoring + risk stream | `@sint/gate-evidence-ledger` |
+
+### Enterprise Features to Build
+
+| Feature | Description | Priority |
+|:--------|:------------|:---------|
+| Redis-backed rate limiting | Multi-instance rate limit state | 🟡 Medium |
+| PostgreSQL evidence store | Production-grade persistence | 🟢 Ready (adapter exists) |
+| SSO integration | SAML 2.0 / OIDC for enterprise auth | 🟡 Medium |
+| SIEM connectors | Splunk, Datadog, Elastic integration | 🟡 Medium |
+| Compliance reports | Auto-generated OWASP / SOC2 evidence reports | 🔴 High |
+| Multi-tenant isolation | Namespace-level resource separation | 🟡 Medium |
+
+**Success metric:** 1 enterprise pilot ($5K-$15K/mo), OWASP compliance report generator shipped.
+
+---
+
+## 🌐 Phase 5: Protocol Network (Q4 2026)
+
+**Goal:** Decentralized agent governance — multiple organizations running SINT gateways and trusting each other's capability tokens via the Open Agent Trust Registry.
+
+| Component | Status | Next Step |
+|:----------|:-------|:----------|
+| Trust Registry | ✅ 8 issuers registered | Open registration, governance voting |
+| Token delegation | ✅ Cross-agent delegation working | Cross-organization delegation |
+| A2A bridge | ✅ Agent-to-agent protocol | Multi-gateway federation |
+| Economy bridge | ✅ Budget tracking | Cross-org settlement |
+
+**Vision:** Agent A (governed by Org 1's gateway) delegates a capability token to Agent B (governed by Org 2's gateway). Both gateways verify the token chain. Evidence is logged to both ledgers. The Trust Registry validates both issuers.
+
+---
+
+## Revenue Timeline
+
+| Quarter | Source | Target |
+|:--------|:-------|:-------|
+| **Q2 2026** | BrightBeam pilot closes ($5K) | $5K |
+| **Q2 2026** | GrayMatter Robotics intro (LA) | Pipeline |
+| **Q3 2026** | Enterprise compliance pilot (1 client) | $10-15K/mo |
+| **Q3 2026** | Framework integration consulting | $5-10K/mo |
+| **Q4 2026** | Protocol SaaS (hosted gateway) | $2-5K/mo/customer |
+
+---
+
+## What Makes SINT Different
+
+| | SINT Protocol | Microsoft AGT | Proofpoint AI Security |
+|:--|:-------------|:--------------|:----------------------|
+| **Physical AI** | ✅ ROS2, MAVLink, OPC-UA, MQTT | ❌ Software only | ❌ Software only |
+| **Open source** | ✅ MIT | ✅ MIT | ❌ Proprietary |
+| **Capability tokens** | ✅ Ed25519, attenuation-only | ❌ Policy-only | ❌ N/A |
+| **Evidence ledger** | ✅ SHA-256 hash chain | ❌ Logging only | ❌ Proprietary |
+| **OWASP coverage** | ✅ 10/10 | ✅ 10/10 | Partial |
+| **Framework support** | 🔜 Coming (Phase 2) | ✅ LangChain, CrewAI, ADK | ❌ Standalone |
+| **Console UI** | ✅ 31 modules | ❌ CLI only | ✅ SaaS dashboard |
+| **Price** | Free (MIT) + hosted SaaS | Free (MIT) | $$$$ enterprise |
+
+<Warning>
+Microsoft AGT shipped April 2, 2026. They have first-mover in enterprise frameworks (LangChain, CrewAI, ADK integrations). Our differentiation is physical AI + capability tokens + evidence ledger + console UI. We must ship framework integrations fast (Phase 2) before they absorb that market.
+</Warning>
+
+---
+
+## Contributing
+
+Want to help? The highest-impact areas right now:
+
+1. **Framework integrations** — Write a SINT wrapper for your favorite agent framework
+2. **Bridge adapters** — Add new protocol bridges (MQTT 5.0, WebSocket, Bluetooth LE)
+3. **Console features** — Enable and build out flagged features (60+ flags, many stubbed)
+4. **Trust Registry** — Register as an issuer, add your organization
+5. **Documentation** — Tutorials, guides, video walkthroughs
+
+<CardGroup cols={2}>
+  <Card title="GitHub" icon="github" href="https://github.com/sint-ai/sint-protocol">
+    View source and contribute
+  </Card>
+  <Card title="Discord" icon="discord" href="https://discord.gg/cYyeqVQ5j4">
+    Join the community
+  </Card>
+</CardGroup>

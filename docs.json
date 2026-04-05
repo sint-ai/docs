@@ -42,8 +42,8 @@
           {
             "group": "Products",
             "pages": [
+              "console",
               "avatars",
-              "operators",
               "outreach",
               "cmo-operator"
             ]
@@ -58,6 +58,7 @@
           {
             "group": "Resources",
             "pages": [
+              "roadmap",
               "presskit"
             ]
           }

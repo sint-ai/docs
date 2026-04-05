@@ -1,0 +1,340 @@
+---
+title: "SINT Console"
+description: "Unified control center for managing AI agents, orchestrating workflows, monitoring operations, and governing autonomous systems."
+sidebarTitle: "Console"
+---
+
+**SINT Console** is the operational control center for the SINT ecosystem. It connects to the [SINT Protocol](/gate) gateway via WebSocket (JSON-RPC 2.0) and provides a visual interface for everything: agent management, workflow orchestration, policy enforcement, evidence monitoring, and multi-agent coordination.
+
+<Info>
+**Source:** [github.com/sint-ai/sint-agents](https://github.com/sint-ai/sint-agents) — React 19, Redux Toolkit 2.5, 31 feature modules, 110+ test files, 60+ feature flags.
+</Info>
+
+---
+
+## Architecture
+
+```
+┌──────────────────────────────────────────────────────┐
+│                    SINT Console                       │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌─────────┐ │
+│  │ Conductor│ │  Canvas   │ │ Operator │ │  Web3   │ │
+│  │ (Policy) │ │ (Flows)  │ │ (Tasks)  │ │(Wallet) │ │
+│  └────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬────┘ │
+│       └─────────────┴────────────┴────────────┘      │
+│                         │                             │
+│              GatewayDataService                       │
+│         (auto: WebSocket → REST → Mock)               │
+└─────────────────────────┬─────────────────────────────┘
+                          │ JSON-RPC 2.0 / WebSocket
+                          │ Ed25519 device identity
+                          ▼
+              ┌───────────────────────┐
+              │  SINT Protocol        │
+              │  Policy Gateway       │
+              │  (32 REST endpoints)  │
+              └───────────────────────┘
+```
+
+The Console uses a **cascading data strategy**:
+1. **Gateway WebSocket** — Real-time bidirectional communication (preferred)
+2. **REST API** — Fallback when WebSocket is unavailable
+3. **Mock data** — Offline development mode
+
+Authentication uses **Ed25519 device identity** — the Console generates a keypair on first visit and authenticates via signed nonce challenge.
+
+---
+
+## Core Modules
+
+### 🎛️ Conductor — Multi-Agent Orchestration
+
+The Conductor is the Console's primary interface for managing SINT Protocol operations. It maps directly to the gateway's API surface.
+
+<CardGroup cols={2}>
+  <Card title="Conductor Dashboard" icon="gauge-high">
+    Real-time overview of active runs, agent status, and system health. Shows running agents, pending approvals, recent evidence events, and risk distribution.
+
+    **Route:** `/app/conductor`
+  </Card>
+  <Card title="Approval Gates" icon="shield-check">
+    Human-in-the-loop approval queue for T2+ operations. Operators can approve, deny, or escalate pending agent actions with full context (token details, risk tier, constraint values).
+
+    **Route:** `/app/conductor/approvals`
+  </Card>
+  <Card title="Policy Editor" icon="file-shield">
+    Create, edit, toggle, and delete policy rules. Policies define constraints (force limits, velocity caps, geofences) and conditions (agent ID, resource type, action category).
+
+    **Route:** `/app/conductor/policy`
+
+    **API:** `POST/PATCH/DELETE /conductor/policies`
+  </Card>
+  <Card title="Evidence Browser" icon="magnifying-glass">
+    Browse and filter the SHA-256 hash chain evidence ledger. Filter by run, event type, time range. View chain integrity status and generate proof receipts for audit.
+
+    **Route:** `/app/conductor/evidence`
+  </Card>
+  <Card title="Goal Monitor" icon="bullseye">
+    Track active agent goals and monitor for goal hijacking attempts. The goal hijack detector (25+ patterns, 0.6 confidence threshold) surfaces suspicious activity in real-time.
+
+    **Route:** `/app/conductor/goals`
+  </Card>
+  <Card title="Server Registry" icon="server">
+    Monitor connected MCP servers, their capabilities, and health status. Register new servers, view tool catalogs, track connection stability.
+
+    **Route:** `/app/conductor/servers`
+  </Card>
+</CardGroup>
+
+### 🖼️ Canvas — Visual Workflow Builder
+
+A drag-and-drop flow editor for composing multi-agent workflows. Built with **React Flow** (@xyflow/react).
+
+**13 node types:**
+
+| Node | Purpose |
+|:-----|:--------|
+| `agent` | AI agent execution node |
+| `task` | Task assignment and tracking |
+| `conductor_run` | SINT Protocol governed run |
+| `mcp_server` | MCP tool server integration |
+| `policy` | Policy checkpoint / gate |
+| `chat` | Chat interaction node |
+| `trigger` | Flow start (manual, webhook, scheduled) |
+| `condition` | Conditional branching (expression evaluation) |
+| `output` | Result collection / logging |
+| `swarm` | Multi-agent swarm coordination |
+| `n8n_workflow` | n8n integration node |
+
+**Pre-built templates:**
+
+| Template | Description |
+|:---------|:------------|
+| Social Media Pipeline | Content generation → review → publish |
+| Market Analysis | Data gathering → analysis → report |
+| Research & Summarize | Web scrape → summarize → output |
+| Multi-Agent Consensus | Multiple agents → voting → decision |
+| RAG: Document Ingestion | Upload → chunk → embed → store |
+| RAG: Knowledge Query | Query → retrieve → generate response |
+| NEXUS: Startup MVP | Idea → research → prototype → test |
+
+The **FlowExecutor** engine processes flows using topological sort (Kahn's algorithm), executing nodes in dependency order with real-time status updates.
+
+**Route:** `/app/canvas`
+
+### 📊 Operator — Operations Management
+
+<CardGroup cols={2}>
+  <Card title="Tasks (Kanban)" icon="list-check">
+    Task management with Kanban board, status tracking, auto-assignment, checkout locking, and activity logs. Linked to conductor runs for full traceability.
+
+    **Route:** `/app/operator/tasks`
+  </Card>
+  <Card title="Traces" icon="timeline">
+    Execution traces with detailed step-by-step logs, timing data, and gateway message history. Drill into any agent run to see exactly what happened.
+
+    **Route:** `/app/operator/traces`
+  </Card>
+  <Card title="Sessions" icon="comments">
+    Active session management — view connected agents, session state, message history, and real-time activity.
+
+    **Route:** `/app/operator/sessions`
+  </Card>
+  <Card title="Memory" icon="brain">
+    Agent memory browser — view shared context, cross-session learning data, and memory entries with importance scoring.
+
+    **Route:** `/app/operator/memory`
+  </Card>
+</CardGroup>
+
+### 🧠 Intelligence
+
+Agent intelligence dashboard with:
+- **Activity Feed** — Real-time stream of all agent actions
+- **Skills Manager** — View, configure, and install agent skills
+- **Stats Dashboard** — Aggregated metrics: actions/hour, success rate, cost/action
+- **Trajectory Page** — Visualize agent decision paths over time
+
+**Route:** `/app/intelligence`
+
+### 💰 Web3 & Trading
+
+<CardGroup cols={2}>
+  <Card title="Web3 Dashboard" icon="wallet">
+    Multi-chain wallet management (EVM, Solana, Cosmos). Token balances, transaction history, DeFi panel, send/receive modals, and token swap via integrated DEX aggregator.
+
+    **Route:** `/app/web3`
+  </Card>
+  <Card title="Trading Dashboard" icon="chart-line">
+    Real-time price feeds (via API integration), interactive charts (lightweight-charts), portfolio tracker, and position management.
+
+    **Route:** `/app/trading`
+  </Card>
+</CardGroup>
+
+### 🏪 Marketplace
+
+Agent marketplace with:
+- MCP server discovery and installation
+- Skill/plugin catalog with filtering
+- Community-contributed templates
+- n8n workflow import
+
+**Route:** `/app/marketplace`
+
+### 📈 Metrics & Observability
+
+- **Metrics Dashboard** — System-wide KPIs: latency, throughput, error rates, cost tracking
+- **Observability Page** — Deep diagnostics, log aggregation, anomaly detection alerts
+- **Cost Tracking** — Per-agent, per-run cost breakdown with budget alerts and predictions
+
+**Routes:** `/app/metrics`, `/app/observability`
+
+---
+
+## State Management
+
+The Console uses **Redux Toolkit 2.5** with 31 operator feature slices:
+
+| Category | Slices |
+|:---------|:-------|
+| **Orchestration** | `conductorSlice`, `canvasSlice`, `canvasExecutionSlice` |
+| **Agents** | `agentSlice`, `handoffSlice`, `sharedContextSlice` |
+| **Tasks** | `taskSlice`, `scheduleSlice`, `templateSlice` |
+| **Governance** | `approvalSlice`, `trustPolicySlice`, `auditSlice` |
+| **Monitoring** | `metricsSlice`, `anomalySlice`, `runEventSlice`, `sessionSlice` |
+| **Intelligence** | `intelligenceSlice`, `operatorSlice` (traces) |
+| **Finance** | `budgetSlice`, `tradingSlice`, `web3Slice` |
+| **Infra** | `notificationSlice`, `marketplaceSlice`, `webhookSlice` |
+
+All slices follow the same pattern: async thunks → reducers → selectors → tests.
+
+---
+
+## Gateway Integration
+
+The Console connects to SINT Protocol's gateway server via the **GatewayClient** — a WebSocket client implementing JSON-RPC 2.0 with Ed25519 authentication.
+
+### Real-Time Event Types
+
+| Event | Source | Handler |
+|:------|:-------|:--------|
+| `conductor.run.*` | Run lifecycle (created, updated, completed) | `conductorSlice` |
+| `conductor.step.*` | Step execution progress | `conductorSlice` |
+| `conductor.approval.*` | Approval gate triggered | `approvalSlice` |
+| `conductor.evidence.*` | Evidence ledger entry | `conductorSlice` |
+| `conductor.agent.status` | Agent heartbeat / status change | `agentSlice` |
+| `conductor.server.status` | MCP server connect/disconnect | `conductorSlice` |
+| `agent.heartbeat` | Periodic agent health check | `agentSlice` |
+| `handoff.*` | Agent-to-agent task handoff | `handoffSlice` |
+| `shared-context.update` | Shared context synchronization | `sharedContextSlice` |
+| `audit.entry` | Audit log entry | `auditSlice` |
+| `budget.updated` | Budget change notification | `budgetSlice` |
+| `trust.policy.updated` | Policy rule change | `trustPolicySlice` |
+| `trust.evaluation` | Real-time policy evaluation result | `trustPolicySlice` |
+| `anomaly.detected` | Anomaly detection alert | `anomalySlice` |
+| `run-event.*` | Run stdout/event streaming | `runEventSlice` |
+
+### Connection Resilience
+
+- Automatic reconnection with exponential backoff (800ms base)
+- Nonce-based challenge-response authentication
+- Device identity persistence (Ed25519 keypair in localStorage)
+- Status tracking: `disconnected → connecting → connected`
+
+---
+
+## Feature Flags
+
+The Console uses a centralized feature flag system (60+ flags) allowing individual features to be enabled/disabled without code changes:
+
+<Accordion title="Full Feature Flag List">
+
+**Core:** `gatewayEnabled`, `gatewayChat`, `gatewayFirstData`
+
+**Conductor:** `conductor`, `conductorGoals`, `conductorApprovals`, `conductorPolicy`, `conductorServers`, `conductorEvidence`, `conductorStateMachine`, `conductorContextTools`, `conductorEvidenceChain`, `conductorPersona`
+
+**Canvas:** `canvasEditor`, `canvasExecution`, `workflowTemplates`, `n8nIntegration`
+
+**Tasks:** `tasksKanban`, `taskRunLink`, `taskAutoAssign`, `taskActivityLog`, `taskWorker`, `taskCheckoutLocking`, `runTemplates`
+
+**Agent Management:** `agentManager`, `agentHeartbeat`, `agentHierarchy`, `agentConfigRevisions`, `agentSoulConfig`, `agentHandoffs`, `sharedContext`
+
+**Intelligence:** `crossSessionLearning`, `confidenceScoring`, `progressiveTrust`, `failureAnalysis`, `anomalyDetection`
+
+**Observability:** `traces`, `sessions`, `observabilityDashboard`, `metricsDashboard`, `costTracking`, `costPrediction`
+
+**Finance:** `web3Dashboard`, `web3Swap`, `tradingDashboard`
+
+**Infrastructure:** `approvalGates`, `policyEditor`, `memoryPanel`, `schedules`, `webhooks`, `dataExport`, `mcpMarketplace`, `globalSearch`, `notificationCenter`, `openclawSettings`, `dryRunMode`, `rollbackEngine`, `humanAiCollaboration`, `dashboardSummary`
+
+</Accordion>
+
+---
+
+## How Console Maps to Protocol
+
+The Console is the **visual layer** on top of SINT Protocol. Every Console action maps to a protocol operation:
+
+| Console Action | Protocol Endpoint | Package |
+|:---------------|:------------------|:--------|
+| Create run | `POST /v1/intercept` | `@sint/gate-policy-gateway` |
+| Approve action | `POST /v1/approvals/:id/approve` | Gateway server |
+| Create policy | `POST /conductor/policies` | `@sint/gate-policy-gateway` |
+| View evidence | `GET /v1/ledger` | `@sint/gate-evidence-ledger` |
+| Generate proof | `POST /v1/ledger/proof` | `@sint/gate-evidence-ledger` |
+| Register agent | `POST /v1/a2a/agents` | `@sint/bridge-a2a` |
+| Check budget | `GET /v1/economy/balance/:id` | `@sint/bridge-economy` |
+| Canvas execute | Multiple intercepts (batch) | `@sint/gate-policy-gateway` |
+| MCP tool call | `POST /v1/intercept` (MCP bridge) | `@sint/bridge-mcp` |
+
+<Tip>
+The Console works without the Protocol gateway — it falls back to REST API and then mock data for offline development. But full governance features require the gateway connection.
+</Tip>
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|:------|:-----------|
+| **Framework** | React 19 |
+| **State** | Redux Toolkit 2.5 (31 slices) |
+| **Routing** | React Router 7 (32 routes) |
+| **Flow Editor** | @xyflow/react (React Flow) |
+| **Charts** | Recharts + lightweight-charts |
+| **3D** | Three.js + @react-three/fiber |
+| **Web3** | wagmi, viem, ethers, @solana/web3.js, @cosmjs |
+| **Auth** | OIDC (react-oidc-context) + Ed25519 device identity |
+| **Validation** | Zod |
+| **Real-time** | WebSocket JSON-RPC 2.0 |
+| **Testing** | Vitest — 110+ test files |
+| **Build** | Vite |
+
+---
+
+## Getting Started
+
+```bash
+git clone https://github.com/sint-ai/sint-agents.git
+cd sint-agents
+pnpm install
+cp .env.example .env  # Configure VITE_BACKEND_URL, VITE_DASHBOARD_API_URL
+pnpm dev
+```
+
+Connect to a running SINT Protocol gateway:
+
+```env
+VITE_BACKEND_URL=http://localhost:4100
+VITE_DASHBOARD_API_URL=http://localhost:3001
+```
+
+<CardGroup cols={2}>
+  <Card title="SINT Protocol" icon="shield-halved" href="/gate">
+    The governance engine the Console controls
+  </Card>
+  <Card title="Architecture" icon="sitemap" href="/architecture">
+    System architecture and package map
+  </Card>
+</CardGroup>

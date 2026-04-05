@@ -27,11 +27,17 @@ Every action an AI agent attempts against the physical world must pass through t
   <Card title="Whitepaper" icon="file-lines" href="/whitepaper">
     Formal specification of the Security Wedge model, invariants, threat model, and formal safety proofs.
   </Card>
-  <Card title="Avatar System" icon="robot" href="/avatars">
-    3D talking AI avatar with ElevenLabs lipsync, CSML-driven expression escalation, and real-time operator UI.
+  <Card title="SINT Console" icon="gauge-high" href="/console">
+    Unified control center — 31 feature modules, visual workflow builder, real-time agent orchestration, policy management.
   </Card>
   <Card title="Security Model" icon="key" href="/security">
     Ed25519 token cryptography, delegation chains, goal hijack detection, circuit breaker invariants.
+  </Card>
+  <Card title="Avatar System" icon="robot" href="/avatars">
+    3D talking AI avatar with ElevenLabs lipsync, CSML-driven expression escalation, and real-time operator UI.
+  </Card>
+  <Card title="Roadmap" icon="map" href="/roadmap">
+    Development roadmap: npm publish → framework integrations → physical AI partnerships → enterprise.
   </Card>
 </CardGroup>
 
@@ -43,9 +49,9 @@ Every action an AI agent attempts against the physical world must pass through t
 |--------|-------|
 | Packages in monorepo | 24 |
 | Apps | 5 (`gateway-server`, `sintctl`, `sint-mcp`, `sint-mcp-scanner`, `dashboard`) |
-| SDKs | 3 (TypeScript client, MCP bridge, CLI) |
+| SDKs | 3 (TypeScript, Python, Go) |
 | Test suite | 1,363 tests |
-| Protocol bridges | 11 (ROS2, gRPC, MCP, MQTT/Sparkplug, OPC-UA, MAVLink, A2A, IoT, OpenRMF, Economy, Swarm) |
+| Protocol bridges | 12 (ROS2, gRPC, MCP, MQTT/Sparkplug, OPC-UA, MAVLink, A2A, IoT, OpenRMF, Economy, Swarm, HAL) |
 | Safety tiers | 5 (T1 Sandbox → T5 Unsupervised) |
 | REST endpoints | 32 across 10 route modules |
 | Delegation depth | Max 3 (attenuation-only) |
@@ -73,5 +79,5 @@ Every action an AI agent attempts against the physical world must pass through t
 </CardGroup>
 
 <Note>
-  SINT Protocol is open-source under the MIT license. The gateway server and CLI are production-ready. Avatar system and Operators platform are in active development.
+  SINT Protocol is open-source under the MIT license. The gateway server, CLI, and Console are production-ready. See the [Roadmap](/roadmap) for what's next.
 </Note>
